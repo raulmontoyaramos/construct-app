@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">ConstructApp</string>
+
+    <string name="default_web_client_id" translatable="false">74094958033-f92luhjpapct16tpr7dj9u73o920eq0u.apps.googleusercontent.com</string>
 </resources>

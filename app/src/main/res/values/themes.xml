@@ -2,4 +2,11 @@
 <resources>
 
     <style name="Theme.ConstructApp" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/material_green_500</item>
+        <item name="colorPrimaryDark">@color/material_green_700</item>
+        <item name="colorPrimaryVariant">@color/material_green_700</item>
+        <item name="colorSecondary">@color/material_purple_a700</item>
+    </style>
 </resources>

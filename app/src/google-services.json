@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "74094958033",
+    "project_id": "constructapp-2259c",
+    "storage_bucket": "constructapp-2259c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:74094958033:android:8212915725bad107a0bcf0",
+        "android_client_info": {
+          "package_name": "com.example.constructapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "74094958033-m1fncq1n6e6gv0cf77p0hg1h41kov0eg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.constructapp",
+            "certificate_hash": "f04e50b68852c4a9b09078bd53d67bae951e36ed"
+          }
+        },
+        {
+          "client_id": "74094958033-q1boc0t2np17a4kjrgs38fd0udmav3t8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.constructapp",
+            "certificate_hash": "2f3e6ace35cc07c3ad8149dfa9df131fe4a1da8f"
+          }
+        },
+        {
+          "client_id": "74094958033-llvlokdpa7g6veo09j5l0u9qul6fkf0o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLTtqBDzAzVCqQCa-c2aKMMNGPD9yxfZs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "74094958033-4sl7vdng93mkbbim8mfrb6u2su0kd2l3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

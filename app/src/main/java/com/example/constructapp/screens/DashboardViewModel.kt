@@ -25,6 +25,7 @@ class DashboardViewModel(
     val viewState = MutableStateFlow(
         DashboardViewState(
             dashboardState = DashboardState.Loading,
+            selectedTab = DashboardTab.POSTS,
             posts = emptyList()
         )
     )
@@ -68,9 +69,6 @@ class DashboardViewModel(
             launchSingleTop = true
         }
 
-
-
-
     fun onSignOutClicked() {
         firebaseAuth.signOut()
         navController.navigate(SignIn) {
@@ -80,12 +78,38 @@ class DashboardViewModel(
             }
         }
     }
+
+    fun onTabPressed(tab: DashboardTab) {
+        viewState.update { it.copy(selectedTab = tab) }
+    }
 }
 
 data class DashboardViewState(
     val dashboardState: DashboardState,
+    val selectedTab: DashboardTab,
     val posts: List<Post>
 )
+
+
+enum class DashboardTab {
+    POSTS, MESSAGES
+}
+//data class DashboardTabInfo(
+//    val tab: DashboardTab,
+//    val icon: ImageVector,
+//    val text: String
+//) {
+//    abstract val icon: ImageVector
+//    abstract val text: String
+//    data class Posts(
+//        override val icon: ImageVector = Icons.Default.Home,
+//        override val text: String = "Posts"
+//    ): DashboardTab()
+//    data class Messages(
+//        override val icon: ImageVector = Icons.Default.Email,
+//        override val text: String = "Messages"
+//    ): DashboardTab()
+//}
 
 sealed class DashboardState {
     data object Loading : DashboardState()

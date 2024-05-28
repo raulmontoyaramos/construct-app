@@ -2,7 +2,8 @@ package com.example.constructapp.utils
 
 import androidx.lifecycle.ViewModel
 import com.example.constructapp.DashboardUiState
-import com.example.constructapp.models.Post
+import com.example.constructapp.data.Post
+import com.example.constructapp.screens.DashboardTab
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -38,8 +39,4 @@ class DashboardViewModel : ViewModel() {
             )
         }
     }
-}
-
-enum class DashboardTab {
-    POSTS, POSTS_MESSAGES
 }

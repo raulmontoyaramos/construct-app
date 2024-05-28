@@ -34,14 +34,13 @@ import androidx.compose.ui.unit.sp
 import com.example.constructapp.ConstructAppLogo
 import com.example.constructapp.DashboardUiState
 import com.example.constructapp.R
-import com.example.constructapp.utils.DashboardTab
 
 
 @Composable
 fun ChatsScreen(
     constructAppUiState: DashboardUiState,
     onTabPressed: ((DashboardTab) -> Unit),
-    navigationItemContentList: List<DashboardTabInfo>,
+    //navigationItemContentList: List<DashboardTabInfo>,
 ) {
     Column(
         modifier = Modifier

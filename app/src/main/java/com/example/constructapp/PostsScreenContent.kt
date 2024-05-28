@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
-import com.example.constructapp.models.Post
+import com.example.constructapp.data.Post
 
 @Composable
 fun PostsList(
@@ -48,7 +48,7 @@ fun PostsList(
         item {
             HomeTopBar()
         }
-        items(posts, key = { post -> post.id }) { post ->
+        items(posts) { post ->
             PostsListItem(
                 post = post,
                 isSelected = false,
@@ -87,7 +87,7 @@ fun PostsListItem(
                 post = post
             )
             Text(
-                text = post.user,
+                text = post.userName,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(
@@ -126,7 +126,7 @@ private fun PostItemHeader(post: Post) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = post.user,
+                text = post.userName,
                 style = MaterialTheme.typography.labelMedium
             )
         }

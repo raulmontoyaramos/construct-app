@@ -1,4 +1,4 @@
-package com.example.constructapp.models
+package com.example.constructapp.data
 
 data class User(
     val id: Long,

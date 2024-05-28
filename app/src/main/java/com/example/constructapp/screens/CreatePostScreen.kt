@@ -50,6 +50,9 @@ fun CreatePostScreen(
             Text(text = "User: ${viewState.userName}")
 
             Spacer(modifier = Modifier.height(12.dp))
+            Text(text = "User: ${viewState.userName}")
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

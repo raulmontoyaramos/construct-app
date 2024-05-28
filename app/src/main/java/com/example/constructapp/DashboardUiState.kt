@@ -1,7 +1,7 @@
 package com.example.constructapp
 
-import com.example.constructapp.models.Post
-import com.example.constructapp.utils.DashboardTab
+import com.example.constructapp.data.Post
+import com.example.constructapp.screens.DashboardTab
 
 data class DashboardUiState(
     val selectedTab: DashboardTab,

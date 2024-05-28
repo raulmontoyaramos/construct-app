@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.time.Instant
 
 class CreatePostViewModel(
     private val currentUser: FirebaseUser,
@@ -36,11 +37,15 @@ class CreatePostViewModel(
             try {
                 val result: DocumentReference = withContext(Dispatchers.IO) {
                     val postsDatabase = firebaseFirestore.collection("Posts")
+                    println("onCreatePostClicked - photoUrl = ${currentUser.photoUrl.toString()}")
                     postsDatabase.add(
                         Post(
                             userId = currentUser.uid,
+                            userName = currentUser.displayName ?: "Unknown",
+                            userPicUrl = currentUser.photoUrl.toString(),
                             title = viewState.value.title,
-                            description = viewState.value.description
+                            description = viewState.value.description,
+                            createdAt = Instant.now().epochSecond
                         )
                     ).await()
                 }

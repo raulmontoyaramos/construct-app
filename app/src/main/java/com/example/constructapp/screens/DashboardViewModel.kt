@@ -82,6 +82,10 @@ class DashboardViewModel(
     fun onTabPressed(tab: DashboardTab) {
         viewState.update { it.copy(selectedTab = tab) }
     }
+
+    fun onPostClicked(post: Post) {
+
+    }
 }
 
 data class DashboardViewState(

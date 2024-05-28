@@ -1,5 +1,6 @@
 package com.example.constructapp.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -86,7 +87,7 @@ fun DashboardScreen(
                     DashboardScreenContent(
                         viewState = viewState,
                         onTabPressed = { viewModel.onTabPressed(it) },
-                        onPostClick = {}
+                        onPostClick = { viewModel.onPostClicked(it) }
                     )
 
                 DashboardState.Empty ->
@@ -147,7 +148,10 @@ fun DashboardScreenContent(
         ) {
             when (viewState.selectedTab) {
                 DashboardTab.POSTS ->
-                    DashboardPostsScreen(viewState)
+                    DashboardPostsScreen(
+                        posts = viewState.posts,
+                        onPostClick = onPostClick
+                    )
 
                 DashboardTab.MESSAGES ->
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -169,17 +173,24 @@ private fun DashboardTab.icon() = when (this) {
 }
 
 @Composable
-private fun DashboardPostsScreen(viewState: DashboardViewState) {
+private fun DashboardPostsScreen(
+    posts: List<Post>,
+    onPostClick: (Post) -> Unit
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
-        items(viewState.posts) { post ->
+        items(posts) { post ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
             ) {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = { onPostClick(post) })
+                ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()

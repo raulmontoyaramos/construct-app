@@ -3,6 +3,7 @@ package com.example.constructapp.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.example.constructapp.SignIn
 import com.example.constructapp.data.Post
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -17,6 +18,7 @@ import kotlinx.coroutines.withContext
 import java.time.Instant
 
 class CreatePostViewModel(
+    private val firebaseAuth: FirebaseAuth,
     private val currentUser: FirebaseUser,
     private val firebaseFirestore: FirebaseFirestore,
     private val navController: NavController
@@ -27,7 +29,9 @@ class CreatePostViewModel(
             createPostState = CreatePostState.Filling,
             userName = currentUser.displayName ?: currentUser.uid,
             title = "",
-            description = ""
+            description = "",
+            posts = emptyList(),
+            posPicUrl = ""
         )
     )
 
@@ -45,6 +49,7 @@ class CreatePostViewModel(
                             userPicUrl = currentUser.photoUrl.toString(),
                             title = viewState.value.title,
                             description = viewState.value.description,
+                            postPicUrl= currentUser.photoUrl.toString(),
                             createdAt = Instant.now().epochSecond
                         )
                     ).await()
@@ -65,6 +70,18 @@ class CreatePostViewModel(
         }
     }
 
+    fun onSignOutClicked() {
+        firebaseAuth.signOut()
+        navController.navigate(SignIn) {
+            launchSingleTop = true
+            popUpTo(navController.graph.id) {
+                inclusive = true
+            }
+        }
+    }
+
+    fun onBackButtonClicked() = navController.popBackStack()
+
     fun onOkClicked() = navController.popBackStack()
 
     fun onTitleUpdated(newTitle: String) {
@@ -80,11 +97,13 @@ class CreatePostViewModel(
     }
 }
 
-data class CreatePostViewState(
+data class CreatePostViewState( //Todos los datos para mostrar la pantalla (no sólo recomponibles a diferencia de UiState)
     val createPostState: CreatePostState,
     val userName: String,
     val title: String,
-    val description: String
+    val description: String,
+    val posts: List<Post>, //pq la lista de posts??, meto aquí también la postPickUrl?
+    val posPicUrl: String,
 )
 
 sealed class CreatePostState {

@@ -1,17 +1,22 @@
 package com.example.constructapp.screens
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ExitToApp
@@ -19,11 +24,13 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.rounded.Create
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -33,11 +40,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
+import com.example.constructapp.R
 import com.example.constructapp.data.Post
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,28 +64,45 @@ fun DashboardScreen(
 ) {
     val viewState: DashboardViewState = viewModel.viewState.collectAsState().value
     println("DashboardScreen - viewState = $viewState")
+    // Asegúrate de que hay al menos un post para mostrar en la barra superior
+    val examplePost = viewState.posts.firstOrNull()
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(text = "Posts") },
-                actions = {
-                    IconButton(onClick = viewModel::onSignOutClicked) {
-                        Icon(Icons.Filled.ExitToApp, null)
+            if (examplePost != null) {
+                HomeTopBar(post = examplePost, viewModel = viewModel)
+            } else {
+                TopAppBar(
+                    title = { Text(text = "Posts") },
+                    navigationIcon = {
+                        ConstructAppLogo(
+                            modifier = Modifier
+                                .size(dimensionResource(R.dimen.topbar_logo_size))
+                                .padding(start = dimensionResource(R.dimen.topbar_logo_padding_start))
+                        )
+                    },
+                    actions = {
+                        IconButton(onClick = viewModel::onSignOutClicked) {
+                            Icon(Icons.Filled.ExitToApp, null)
+                        }
                     }
-                }
-            )
+                )
+            }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = viewModel::onCreatePostClicked) {
+            FloatingActionButton(
+                onClick = viewModel::onCreatePostClicked,
+                modifier = Modifier.padding(bottom = 56.dp) // Añadido padding para elevar el FAB sobre la BottomAppBar
+            ) {
                 Icon(Icons.Rounded.Create, "Create new post")
             }
         }
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
+            Spacer(modifier = Modifier.height(16.dp)) // Añadir espacio debajo de la TopAppBar
             when (viewState.dashboardState) {
                 DashboardState.Loading ->
                     Column(
@@ -148,7 +183,7 @@ fun DashboardScreenContent(
         ) {
             when (viewState.selectedTab) {
                 DashboardTab.POSTS ->
-                    DashboardPostsScreen(
+                    PostsList(
                         posts = viewState.posts,
                         onPostClick = onPostClick
                     )
@@ -173,40 +208,188 @@ private fun DashboardTab.icon() = when (this) {
 }
 
 @Composable
-private fun DashboardPostsScreen(
+fun PostsList(
     posts: List<Post>,
     onPostClick: (Post) -> Unit
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = dimensionResource(R.dimen.email_list_only_horizontal_padding)),
+        contentPadding = WindowInsets.safeDrawing.asPaddingValues(),
+        verticalArrangement = Arrangement.spacedBy(
+            dimensionResource(R.dimen.email_list_item_vertical_spacing)
+        )
     ) {
-        items(posts) { post ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = { onPostClick(post) })
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-                            .withZone(ZoneId.systemDefault())
-                        Text(text = "User: ${post.userId}")
-                        Text(text = "User name: ${post.userName}")
-                        Text(text = "Title: ${post.title}")
-                        Text(text = "Description: ${post.description}")
-                        Text(text = "Created: ${formatter.format(Instant.ofEpochMilli(post.createdAt))}")
-                    }
+        items(posts/*, key = { post -> post.id }*/) { post -> //La key con el id es para mejorar el rendimiento de la lista y evitar errores pero sólo tendría sentido si el ID que se le pasa es el del post y sólo tenemos el del usuario
+            PostsListItem(
+                post = post,
+                isSelected = false,
+                onCardClick = {
+                    onPostClick(post)
                 }
+            )
+        }
+    }
+}
+
+@Composable
+fun PostsListItem(
+    post: Post,
+    onCardClick: () -> Unit,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.secondaryContainer
             }
-            Spacer(modifier = Modifier.height(12.dp))
+        ),
+        onClick = onCardClick
+    ) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(dimensionResource(R.dimen.email_list_item_inner_padding))
+        ) {
+            PostItemHeader(
+                post = post,
+                modifier = modifier.fillMaxWidth()
+            )
+            if (post.description.isNotEmpty()) {
+                Text(
+                    text = post.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(
+                        top = dimensionResource(R.dimen.email_list_item_header_subject_spacing),
+                        bottom = dimensionResource(R.dimen.email_list_item_subject_body_spacing)
+                    ),
+                )
+            }
+
+            if (post.description.isNotEmpty()) {
+                Text(
+                    text = post.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PostItemHeader(post: Post, modifier: Modifier = Modifier) {
+    Row(modifier = modifier) {
+        UserProfileImage(
+            imageUrl = post.userPicUrl,
+            description = post.userName,
+            modifier = Modifier.size(dimensionResource(R.dimen.email_header_profile_size))
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(
+                    horizontal = dimensionResource(R.dimen.email_header_content_padding_horizontal),
+                    vertical = dimensionResource(R.dimen.email_header_content_padding_vertical)
+                ),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = post.userName,
+                style = MaterialTheme.typography.labelMedium
+            )
+            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                .withZone(ZoneId.systemDefault())
+            Text(
+                text = "${formatter.format(Instant.ofEpochMilli(post.createdAt))}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
+    }
+}
+
+@Composable
+fun UserProfileImage(
+    imageUrl: String,
+    description: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier) {
+        Image(
+            modifier = Modifier.clip(CircleShape),
+            painter = rememberAsyncImagePainter(imageUrl), //Ésto es de la librería de Coil
+            contentDescription = description,
+        )
+    }
+}
+
+@Composable
+fun ConstructAppLogo(
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary
+) {
+    Image(
+        painter = painterResource(R.drawable.logo),
+        contentDescription = "Logo de ConstructApp",
+        colorFilter = ColorFilter.tint(color),
+        modifier = modifier
+    )
+}
+
+
+//Scaffold( ANTIGUA TOPBAR
+//topBar = {
+//    TopAppBar(
+//        title = { Text(text = "Posts") },
+//        actions = {
+//            IconButton(onClick = viewModel::onSignOutClicked) {
+//                Icon(Icons.Filled.ExitToApp, null)
+//            }
+//        }
+//    )
+//}
+
+@Composable
+fun HomeTopBar(post: Post, viewModel: DashboardViewModel, modifier: Modifier = Modifier) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        ConstructAppLogo(
+            modifier = Modifier
+                .size(dimensionResource(R.dimen.topbar_logo_size))
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = "Posts",
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            ),
+            modifier = Modifier.align(Alignment.CenterVertically)
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        UserProfileImage(
+            imageUrl = post.userPicUrl, //Aquí quería usar user.appUserPicUrl que creé en la data class User pero me ha dado muchos problemas q no pude solucionar
+            description = "User profile picture",
+            modifier = Modifier
+                .size(dimensionResource(R.dimen.topbar_profile_image_size))
+                .padding(end = 8.dp)
+        )
+        IconButton(onClick = viewModel::onSignOutClicked) {
+            Icon(Icons.Filled.ExitToApp, null)
         }
     }
 }

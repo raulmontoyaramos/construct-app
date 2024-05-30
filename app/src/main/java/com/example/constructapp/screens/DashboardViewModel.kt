@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.example.constructapp.CreatePost
+import com.example.constructapp.PostDetails
 import com.example.constructapp.SignIn
 import com.example.constructapp.data.Post
 import com.google.firebase.auth.FirebaseAuth
@@ -84,7 +85,9 @@ class DashboardViewModel(
     }
 
     fun onPostClicked(post: Post) {
-
+        navController.navigate(PostDetails(post)) {
+            launchSingleTop = true
+        }
     }
 }
 
@@ -93,7 +96,6 @@ data class DashboardViewState(
     val selectedTab: DashboardTab,
     val posts: List<Post>
 )
-
 
 enum class DashboardTab {
     POSTS, MESSAGES

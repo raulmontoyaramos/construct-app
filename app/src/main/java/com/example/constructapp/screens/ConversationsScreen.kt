@@ -32,13 +32,12 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.constructapp.ConstructAppLogo
-import com.example.constructapp.DashboardUiState
 import com.example.constructapp.R
 
 
 @Composable
 fun ChatsScreen(
-    constructAppUiState: DashboardUiState,
+    constructAppUiState: DashboardViewState,
     onTabPressed: ((DashboardTab) -> Unit),
     //navigationItemContentList: List<DashboardTabInfo>,
 ) {

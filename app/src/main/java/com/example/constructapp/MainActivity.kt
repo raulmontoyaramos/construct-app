@@ -12,15 +12,21 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import com.example.constructapp.data.Post
+import com.example.constructapp.navigation.parcelableType
 import com.example.constructapp.screens.CreatePostScreen
 import com.example.constructapp.screens.CreatePostViewModel
 import com.example.constructapp.screens.DashboardScreen
 import com.example.constructapp.screens.DashboardViewModel
+import com.example.constructapp.screens.PostDetailsScreen
+import com.example.constructapp.screens.PostDetailsViewModel
 import com.example.constructapp.screens.SignInScreen
 import com.example.constructapp.screens.SignInViewModel
 import com.example.constructapp.ui.theme.ConstructAppTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlin.reflect.typeOf
 
 class MainActivity : ComponentActivity() {
 
@@ -61,10 +67,24 @@ class MainActivity : ComponentActivity() {
                                     )
                                 )
                             }
+                            composable<PostDetails>(
+                                typeMap = mapOf(typeOf<Post>() to parcelableType<Post>())
+                            ) {
+                                val post = it.toRoute<PostDetails>().post
+                                println("PostDetails - post=$post")
+                                PostDetailsScreen(
+                                    PostDetailsViewModel(
+                                        firebaseFirestore = FirebaseFirestore.getInstance(),
+                                        navController = navController,
+                                        post = post
+                                    )
+                                )
+                            }
                             composable<CreatePost> {
                                 FirebaseAuth.getInstance().currentUser?.let { currentUser ->
                                     CreatePostScreen(
                                         CreatePostViewModel(
+                                            firebaseAuth = FirebaseAuth.getInstance(),
                                             currentUser = currentUser,
                                             firebaseFirestore = FirebaseFirestore.getInstance(),
                                             navController = navController

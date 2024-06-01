@@ -28,10 +28,10 @@ class CreatePostViewModel(
         CreatePostViewState(
             createPostState = CreatePostState.Filling,
             userName = currentUser.displayName ?: currentUser.uid,
+            userImageUrl = currentUser.photoUrl.toString(),
             title = "",
             description = "",
-            posts = emptyList(),
-            posPicUrl = ""
+            posts = emptyList()
         )
     )
 
@@ -49,7 +49,6 @@ class CreatePostViewModel(
                             userPicUrl = currentUser.photoUrl.toString(),
                             title = viewState.value.title,
                             description = viewState.value.description,
-                            postPicUrl= currentUser.photoUrl.toString(),
                             createdAt = Instant.now().epochSecond
                         )
                     ).await()
@@ -66,16 +65,6 @@ class CreatePostViewModel(
                 }
             } finally {
                 println("CreatePostViewModel - createPostState = ${viewState.value.createPostState}")
-            }
-        }
-    }
-
-    fun onSignOutClicked() {
-        firebaseAuth.signOut()
-        navController.navigate(SignIn) {
-            launchSingleTop = true
-            popUpTo(navController.graph.id) {
-                inclusive = true
             }
         }
     }
@@ -100,10 +89,10 @@ class CreatePostViewModel(
 data class CreatePostViewState( //Todos los datos para mostrar la pantalla (no sólo recomponibles a diferencia de UiState)
     val createPostState: CreatePostState,
     val userName: String,
+    val userImageUrl: String,
     val title: String,
     val description: String,
-    val posts: List<Post>, //pq la lista de posts??, meto aquí también la postPickUrl?
-    val posPicUrl: String,
+    val posts: List<Post> //pq la lista de posts??, meto aquí también la postPickUrl?
 )
 
 sealed class CreatePostState {

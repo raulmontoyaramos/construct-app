@@ -59,13 +59,16 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             composable<Dashboard> {
-                                DashboardScreen(
-                                    DashboardViewModel(
-                                        firebaseAuth = FirebaseAuth.getInstance(),
-                                        firebaseFirestore = FirebaseFirestore.getInstance(),
-                                        navController = navController
+                                FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+                                    DashboardScreen(
+                                        DashboardViewModel(
+                                            firebaseAuth = FirebaseAuth.getInstance(),
+                                            currentUser = currentUser,
+                                            firebaseFirestore = FirebaseFirestore.getInstance(),
+                                            navController = navController
+                                        )
                                     )
-                                )
+                                } ?: navController.popBackStack()
                             }
                             composable<PostDetails>(
                                 typeMap = mapOf(typeOf<Post>() to parcelableType<Post>())

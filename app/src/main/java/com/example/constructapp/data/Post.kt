@@ -13,7 +13,6 @@ data class Post(
     val userPicUrl: String,
     val title: String,
     val description: String,
-    val postPicUrl: String,
     val createdAt: Long,
 ) : Parcelable {
     // Required empty constructor so we can parse the objects from firestore
@@ -23,7 +22,6 @@ data class Post(
         userPicUrl = "",
         title = "",
         description = "",
-        postPicUrl = "",
         createdAt = Instant.EPOCH.toEpochMilli()
     )
 }

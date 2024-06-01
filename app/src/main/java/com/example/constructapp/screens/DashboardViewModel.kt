@@ -8,6 +8,7 @@ import com.example.constructapp.PostDetails
 import com.example.constructapp.SignIn
 import com.example.constructapp.data.Post
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +20,7 @@ import kotlinx.coroutines.withContext
 
 class DashboardViewModel(
     private val firebaseAuth: FirebaseAuth,
+    private val currentUser: FirebaseUser,
     private val firebaseFirestore: FirebaseFirestore,
     private val navController: NavController
 ) : ViewModel() {
@@ -26,6 +28,7 @@ class DashboardViewModel(
     val viewState = MutableStateFlow(
         DashboardViewState(
             dashboardState = DashboardState.Loading,
+            userImageUrl = currentUser.photoUrl.toString(),
             selectedTab = DashboardTab.POSTS,
             posts = emptyList()
         )
@@ -93,6 +96,7 @@ class DashboardViewModel(
 
 data class DashboardViewState(
     val dashboardState: DashboardState,
+    val userImageUrl: String,
     val selectedTab: DashboardTab,
     val posts: List<Post>
 )

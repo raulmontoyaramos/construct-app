@@ -68,25 +68,7 @@ fun DashboardScreen(
     val examplePost = viewState.posts.firstOrNull()
     Scaffold(
         topBar = {
-            if (examplePost != null) {
-                HomeTopBar(post = examplePost, viewModel = viewModel)
-            } else {
-                TopAppBar(
-                    title = { Text(text = "Posts") },
-                    navigationIcon = {
-                        ConstructAppLogo(
-                            modifier = Modifier
-                                .size(dimensionResource(R.dimen.topbar_logo_size))
-                                .padding(start = dimensionResource(R.dimen.topbar_logo_padding_start))
-                        )
-                    },
-                    actions = {
-                        IconButton(onClick = viewModel::onSignOutClicked) {
-                            Icon(Icons.Filled.ExitToApp, null)
-                        }
-                    }
-                )
-            }
+                HomeTopBar(viewModel = viewModel)
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -345,21 +327,9 @@ fun ConstructAppLogo(
     )
 }
 
-
-//Scaffold( ANTIGUA TOPBAR
-//topBar = {
-//    TopAppBar(
-//        title = { Text(text = "Posts") },
-//        actions = {
-//            IconButton(onClick = viewModel::onSignOutClicked) {
-//                Icon(Icons.Filled.ExitToApp, null)
-//            }
-//        }
-//    )
-//}
-
 @Composable
-fun HomeTopBar(post: Post, viewModel: DashboardViewModel, modifier: Modifier = Modifier) {
+fun HomeTopBar(viewModel: DashboardViewModel, modifier: Modifier = Modifier) {
+    val viewState: DashboardViewState = viewModel.viewState.collectAsState().value
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -382,7 +352,7 @@ fun HomeTopBar(post: Post, viewModel: DashboardViewModel, modifier: Modifier = M
         )
         Spacer(modifier = Modifier.weight(1f))
         UserProfileImage(
-            imageUrl = post.userPicUrl, //Aquí quería usar user.appUserPicUrl que creé en la data class User pero me ha dado muchos problemas q no pude solucionar
+            imageUrl = viewState.userImageUrl,
             description = "User profile picture",
             modifier = Modifier
                 .size(dimensionResource(R.dimen.topbar_profile_image_size))

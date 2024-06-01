@@ -3,7 +3,6 @@ package com.example.constructapp.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.example.constructapp.SignIn
 import com.example.constructapp.data.Post
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -30,8 +29,7 @@ class CreatePostViewModel(
             userName = currentUser.displayName ?: currentUser.uid,
             userImageUrl = currentUser.photoUrl.toString(),
             title = "",
-            description = "",
-            posts = emptyList()
+            description = ""
         )
     )
 
@@ -69,9 +67,9 @@ class CreatePostViewModel(
         }
     }
 
-    fun onBackButtonClicked() = navController.popBackStack()
+    fun onBackButtonClicked() = navController.navigateUp()
 
-    fun onOkClicked() = navController.popBackStack()
+    fun onOkClicked() = navController.navigateUp()
 
     fun onTitleUpdated(newTitle: String) {
         viewState.update { it.copy(title = newTitle) }
@@ -86,13 +84,12 @@ class CreatePostViewModel(
     }
 }
 
-data class CreatePostViewState( //Todos los datos para mostrar la pantalla (no sólo recomponibles a diferencia de UiState)
+data class CreatePostViewState(
     val createPostState: CreatePostState,
     val userName: String,
     val userImageUrl: String,
     val title: String,
-    val description: String,
-    val posts: List<Post> //pq la lista de posts??, meto aquí también la postPickUrl?
+    val description: String
 )
 
 sealed class CreatePostState {

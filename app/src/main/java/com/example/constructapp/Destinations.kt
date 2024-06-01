@@ -1,6 +1,7 @@
 package com.example.constructapp
 
-import com.example.constructapp.data.Post
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -13,9 +14,10 @@ object Dashboard
 object CreatePost
 
 @Serializable
+@Parcelize
 data class PostDetails(
-    val post: Post
-)
+    val postId: String
+) : Parcelable
 
 @Serializable
 object MessagesScreen

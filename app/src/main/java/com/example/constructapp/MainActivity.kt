@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.constructapp.data.Post
+import com.example.constructapp.data.Repository
 import com.example.constructapp.navigation.parcelableType
 import com.example.constructapp.screens.CreatePostScreen
 import com.example.constructapp.screens.CreatePostViewModel
@@ -29,6 +30,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.reflect.typeOf
 
 class MainActivity : ComponentActivity() {
+
+    private val repository = Repository()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,27 +62,26 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             composable<Dashboard> {
-                                FirebaseAuth.getInstance().currentUser?.let { currentUser ->
-                                    DashboardScreen(
-                                        DashboardViewModel(
-                                            firebaseAuth = FirebaseAuth.getInstance(),
-                                            currentUser = currentUser,
-                                            firebaseFirestore = FirebaseFirestore.getInstance(),
-                                            navController = navController
-                                        )
+                                DashboardScreen(
+                                    DashboardViewModel(
+                                        firebaseAuth = FirebaseAuth.getInstance(),
+                                        firebaseFirestore = FirebaseFirestore.getInstance(),
+                                        repository = repository,
+                                        navController = navController
                                     )
-                                } ?: navController.popBackStack()
+                                )
                             }
                             composable<PostDetails>(
                                 typeMap = mapOf(typeOf<Post>() to parcelableType<Post>())
                             ) {
-                                val post = it.toRoute<PostDetails>().post
-                                println("PostDetails - post=$post")
+                                val postId = it.toRoute<PostDetails>().postId
+                                println("PostDetails - postId=$postId")
                                 PostDetailsScreen(
                                     PostDetailsViewModel(
                                         firebaseFirestore = FirebaseFirestore.getInstance(),
-                                        navController = navController,
-                                        post = post
+                                        postId = postId,
+                                        repository = repository,
+                                        navController = navController
                                     )
                                 )
                             }

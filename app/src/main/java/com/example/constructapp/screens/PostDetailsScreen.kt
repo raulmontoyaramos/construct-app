@@ -1,62 +1,56 @@
 package com.example.constructapp.screens
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import com.example.constructapp.R
 import com.example.constructapp.data.Post
 import java.time.Instant
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostDetailsScreen(
     viewModel: PostDetailsViewModel
 ) {
-    val viewState: DetailsViewState = viewModel.viewState.collectAsState().value
+    val viewState: PostDetailsViewState = viewModel.viewState.collectAsState().value
     Scaffold(
         topBar = {
-            DetailsScreenTopBar(
-                onClick = viewModel::onBackButtonClicked,
-                viewModel = viewModel,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        bottom = dimensionResource(R.dimen.detail_topbar_padding_bottom),
-                        top = dimensionResource(R.dimen.topbar_padding_vertical)
-                    )
+            TopAppBar(
+                title = { Text(text = "Post details") },
+                navigationIcon = {
+                    IconButton(onClick = viewModel::onBackButtonClicked) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
             )
         }
     ) { innerPadding ->
@@ -65,44 +59,9 @@ fun PostDetailsScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            PostDetailsCard(viewState.post)
+            viewState.post?.let { PostDetailsCard(it) }
         }
 
-    }
-}
-
-@Composable
-fun DetailsScreen2(
-    viewModel: PostDetailsViewModel,
-    modifier: Modifier = Modifier
-) {
-    Box(modifier = modifier) {
-        LazyColumn(
-            contentPadding = PaddingValues(
-                top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding(),
-            ),
-            modifier = Modifier
-                .fillMaxSize()
-                .background(color = MaterialTheme.colorScheme.inverseOnSurface)
-        ) {
-            item {
-                DetailsScreenTopBar(
-                    onClick = viewModel::onBackButtonClicked,
-                    viewModel = viewModel,
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            bottom = dimensionResource(R.dimen.detail_topbar_padding_bottom),
-                            top = dimensionResource(R.dimen.topbar_padding_vertical)
-                        )
-                )
-
-//                PostDetailsCard(
-//                    post = constructAppUiState.currentSelectedPost,
-//                    modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.detail_card_outer_padding_horizontal))
-//                )
-            }
-        }
     }
 }
 
@@ -142,11 +101,7 @@ private fun PostDetailsCard(
 private fun DetailsScreenHeader(post: Post, modifier: Modifier = Modifier) {
     Row(modifier = modifier) {
         UserProfileImage(
-            imageUrl = post.userPicUrl,
-            description = "User profile picture",
-            modifier = Modifier.size(
-                dimensionResource(R.dimen.email_header_profile_size)
-            )
+            imageUrl = post.userPicUrl, ""
         )
         Column(
             modifier = Modifier
@@ -161,10 +116,9 @@ private fun DetailsScreenHeader(post: Post, modifier: Modifier = Modifier) {
                 text = post.userName,
                 style = MaterialTheme.typography.labelMedium
             )
-            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-                .withZone(ZoneId.systemDefault())
+
             Text(
-                text = formatter.format(Instant.ofEpochMilli(post.createdAt)),
+                text = DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochSecond(post.createdAt)),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.outline
             )
@@ -205,43 +159,6 @@ private fun ActionButton(
                 text = text,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-    }
-}
-
-@Composable
-private fun DetailsScreenTopBar(
-    onClick: () -> Unit,
-    viewModel: PostDetailsViewModel,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(
-            onClick = viewModel::onBackButtonClicked,
-            modifier = Modifier
-                .padding(horizontal = dimensionResource(R.dimen.detail_topbar_back_button_padding_horizontal))
-                .background(MaterialTheme.colorScheme.surface, shape = CircleShape),
-        ) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = null
-            )
-
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(end = dimensionResource(R.dimen.detail_subject_padding_end))
-            ) {
-                Text(
-                    text = "Current Post Title", //Aquí debería hacer algo como DetailsViewModel.currentSelectedPost.title pero ni idea de cómo crear el currentSelectedPost
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
         }
     }
 }

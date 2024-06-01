@@ -3,6 +3,7 @@ package com.example.constructapp.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.example.constructapp.data.Message
 import com.example.constructapp.data.Post
 import com.example.constructapp.data.Repository
 import com.google.firebase.firestore.FirebaseFirestore
@@ -21,7 +22,9 @@ class PostDetailsViewModel(
 
     val viewState = MutableStateFlow(
         PostDetailsViewState(
-            post = null
+            post = null,
+            messagesState = PostMessagesState.Loading,
+            messages = emptyMap()
         )
     )
 
@@ -29,6 +32,7 @@ class PostDetailsViewModel(
         viewModelScope.launch {
             val post: Post? = withContext(Dispatchers.IO) { repository.getPostById(postId) }
             viewState.update { it.copy(post = post) }
+
         }
     }
 
@@ -38,5 +42,14 @@ class PostDetailsViewModel(
 }
 
 data class PostDetailsViewState(
-    val post: Post?
+    val post: Post?,
+    val messagesState: PostMessagesState,
+    val messages: Map<String, Message>
 )
+
+sealed class PostMessagesState {
+    data object Loading : PostMessagesState()
+    data object Success : PostMessagesState()
+    data object Empty : PostMessagesState()
+    data class Error(val errorMessage: String) : PostMessagesState()
+}

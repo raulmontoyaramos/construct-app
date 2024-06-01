@@ -39,8 +39,8 @@ fun SignInScreen(
                                 AuthUI.IdpConfig.EmailBuilder().build(),
                             )
                         )
-                        .setLogo(R.drawable.ic_launcher_foreground) // Set logo drawable
-                        .setTheme(R.style.AppTheme) // Set theme
+                        .setLogo(R.drawable.logo)
+                        .setTheme(R.style.Theme_ConstructApp)
                         .build()
                 )
             }) {

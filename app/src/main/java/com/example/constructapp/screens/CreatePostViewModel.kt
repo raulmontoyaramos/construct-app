@@ -14,8 +14,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.time.Instant
 
 class CreatePostViewModel(
+    private val firebaseAuth: FirebaseAuth,
     private val currentUser: FirebaseUser,
     private val firebaseFirestore: FirebaseFirestore,
     private val navController: NavController
@@ -25,6 +27,7 @@ class CreatePostViewModel(
         CreatePostViewState(
             createPostState = CreatePostState.Filling,
             userName = currentUser.displayName ?: currentUser.uid,
+            userImageUrl = currentUser.photoUrl.toString(),
             title = "",
             description = ""
         )
@@ -36,11 +39,15 @@ class CreatePostViewModel(
             try {
                 val result: DocumentReference = withContext(Dispatchers.IO) {
                     val postsDatabase = firebaseFirestore.collection("Posts")
+                    println("onCreatePostClicked - photoUrl = ${currentUser.photoUrl.toString()}")
                     postsDatabase.add(
                         Post(
                             userId = currentUser.uid,
+                            userName = currentUser.displayName ?: "Unknown",
+                            userPicUrl = currentUser.photoUrl.toString(),
                             title = viewState.value.title,
-                            description = viewState.value.description
+                            description = viewState.value.description,
+                            createdAt = Instant.now().epochSecond
                         )
                     ).await()
                 }
@@ -60,7 +67,9 @@ class CreatePostViewModel(
         }
     }
 
-    fun onOkClicked() = navController.popBackStack()
+    fun onBackButtonClicked() = navController.navigateUp()
+
+    fun onOkClicked() = navController.navigateUp()
 
     fun onTitleUpdated(newTitle: String) {
         viewState.update { it.copy(title = newTitle) }
@@ -78,6 +87,7 @@ class CreatePostViewModel(
 data class CreatePostViewState(
     val createPostState: CreatePostState,
     val userName: String,
+    val userImageUrl: String,
     val title: String,
     val description: String
 )

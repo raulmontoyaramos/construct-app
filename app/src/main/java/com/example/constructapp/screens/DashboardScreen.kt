@@ -52,7 +52,6 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.constructapp.R
 import com.example.constructapp.data.Post
 import java.time.Instant
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 
@@ -225,7 +224,6 @@ fun PostsList(
         items(posts.toList(), key = { (postId, _) -> postId }) { (postId, post) ->
             PostsListItem(
                 post = post,
-                isSelected = false,
                 onCardClick = { onPostClick(postId) }
             )
         }
@@ -235,29 +233,23 @@ fun PostsList(
 @Composable
 fun PostsListItem(
     post: Post,
-    onCardClick: () -> Unit,
-    isSelected: Boolean,
-    modifier: Modifier = Modifier
+    onCardClick: () -> Unit
 ) {
     Card(
-        modifier = modifier,
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.secondaryContainer
-            }
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
         ),
         onClick = onCardClick
     ) {
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(dimensionResource(R.dimen.email_list_item_inner_padding))
         ) {
             PostItemHeader(
                 post = post,
-                modifier = modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             )
             if (post.description.isNotEmpty()) {
                 Text(

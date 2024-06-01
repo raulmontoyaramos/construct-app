@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,7 +38,7 @@ fun PostDetailsScreen(
                 navigationIcon = {
                     IconButton(onClick = viewModel::onBackButtonClicked) {
                         Icon(
-                            imageVector = Icons.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
                         )
                     }
@@ -60,7 +60,7 @@ fun PostDetailsScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                PostDetailsScreenBottomBar()
+                PostDetailsScreenBottomBar(viewModel::onReplyButtonClicked)
             }
         }
 
@@ -68,11 +68,11 @@ fun PostDetailsScreen(
 }
 
 @Composable
-private fun PostDetailsScreenBottomBar() {
+private fun PostDetailsScreenBottomBar(onButtonClicked: () -> Unit) {
     Box {
         ActionButton(
             text = "Reply",
-            onButtonClicked = { println("DetailsScreenButtonBar - onButtonClicked") }
+            onButtonClicked = onButtonClicked
         )
     }
 }
@@ -80,12 +80,12 @@ private fun PostDetailsScreenBottomBar() {
 @Composable
 private fun ActionButton(
     text: String,
-    onButtonClicked: (String) -> Unit,
+    onButtonClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier) {
         Button(
-            onClick = { onButtonClicked(text) }, //Aquí estará el onReplyClicked de DetailsViewModel
+            onClick = onButtonClicked,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = dimensionResource(R.dimen.detail_action_button_padding_vertical)),

@@ -76,20 +76,22 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 val postId = it.toRoute<PostDetails>().postId
                                 println("PostDetails - postId=$postId")
-                                PostDetailsScreen(
-                                    PostDetailsViewModel(
-                                        firebaseFirestore = FirebaseFirestore.getInstance(),
-                                        postId = postId,
-                                        repository = repository,
-                                        navController = navController
+                                FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+                                    PostDetailsScreen(
+                                        PostDetailsViewModel(
+                                            firebaseFirestore = FirebaseFirestore.getInstance(),
+                                            postId = postId,
+                                            currentUser = currentUser,
+                                            repository = repository,
+                                            navController = navController
+                                        )
                                     )
-                                )
+                                } ?: navController.popBackStack()
                             }
                             composable<CreatePost> {
                                 FirebaseAuth.getInstance().currentUser?.let { currentUser ->
                                     CreatePostScreen(
                                         CreatePostViewModel(
-                                            firebaseAuth = FirebaseAuth.getInstance(),
                                             currentUser = currentUser,
                                             firebaseFirestore = FirebaseFirestore.getInstance(),
                                             navController = navController

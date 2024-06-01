@@ -53,7 +53,10 @@ fun PostDetailsScreen(
                 .padding(16.dp)
         ) {
             viewState.post?.let {
-                PostsListItem(it) {}
+                PostsListItem(
+                    post = it,
+                    enabled = false
+                ) {}
 
                 Spacer(modifier = Modifier.height(12.dp))
 

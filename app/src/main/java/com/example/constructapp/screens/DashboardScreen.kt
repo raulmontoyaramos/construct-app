@@ -224,6 +224,7 @@ fun PostsList(
         items(posts.toList(), key = { (postId, _) -> postId }) { (postId, post) ->
             PostsListItem(
                 post = post,
+                enabled = true,
                 onCardClick = { onPostClick(postId) }
             )
         }
@@ -233,6 +234,7 @@ fun PostsList(
 @Composable
 fun PostsListItem(
     post: Post,
+    enabled: Boolean,
     onCardClick: () -> Unit
 ) {
     Card(
@@ -240,6 +242,7 @@ fun PostsListItem(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         ),
+        enabled = enabled,
         onClick = onCardClick
     ) {
         Column(

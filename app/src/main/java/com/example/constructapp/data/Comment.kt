@@ -7,19 +7,19 @@ import java.time.Instant
 
 @Serializable
 @Parcelize
-data class Message(
+data class Comment(
     val userId: String,
     val userName: String,
     val userPicUrl: String,
-    val message: String,
-    val createdAt: Long,
+    val body: String,
+    val commentTimeStamp: Long,
 ) : Parcelable {
     // Required empty constructor so we can parse the objects from firestore
     constructor() : this(
         userId = "",
         userName = "",
         userPicUrl = "",
-        message = "",
-        createdAt = Instant.EPOCH.toEpochMilli()
+        body = "",
+        commentTimeStamp = Instant.EPOCH.toEpochMilli()
     )
 }

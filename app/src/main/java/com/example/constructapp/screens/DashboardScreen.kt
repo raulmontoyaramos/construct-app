@@ -52,7 +52,9 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.constructapp.R
 import com.example.constructapp.data.Post
 import java.time.Instant
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -254,7 +256,7 @@ fun PostsListItem(
                 post = post,
                 modifier = Modifier.fillMaxWidth()
             )
-            if (post.description.isNotEmpty()) {
+            if (post.title.isNotEmpty()) {
                 Text(
                     text = post.title,
                     style = MaterialTheme.typography.bodyLarge,
@@ -280,7 +282,11 @@ fun PostsListItem(
 }
 
 @Composable
-private fun PostItemHeader(post: Post, modifier: Modifier = Modifier) {
+fun PostItemHeader(post: Post, modifier: Modifier = Modifier) {
+    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy, HH:mm", Locale.getDefault())
+    val formattedDateTime = Instant.ofEpochSecond(post.createdAt)
+        .atZone(ZoneId.systemDefault())
+        .format(formatter)
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
@@ -303,26 +309,11 @@ private fun PostItemHeader(post: Post, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.labelMedium
             )
             Text(
-                text = DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochSecond(post.createdAt)),
+                text = formattedDateTime,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.outline
             )
         }
-    }
-}
-
-@Composable
-fun UserProfileImage(
-    imageUrl: String,
-    description: String,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier = modifier) {
-        Image(
-            modifier = Modifier.clip(CircleShape),
-            painter = rememberAsyncImagePainter(imageUrl), //Ésto es de la librería de Coil
-            contentDescription = description,
-        )
     }
 }
 

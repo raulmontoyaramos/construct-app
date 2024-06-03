@@ -3,7 +3,7 @@ package com.example.constructapp.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.example.constructapp.data.Message
+import com.example.constructapp.data.Comment
 import com.example.constructapp.data.Post
 import com.example.constructapp.data.Repository
 import com.google.firebase.auth.FirebaseUser
@@ -30,9 +30,10 @@ class PostDetailsViewModel(
     val viewState = MutableStateFlow(
         PostDetailsViewState(
             post = null,
-            messagesState = PostMessagesState.Loading,
-            messages = emptyMap(),
-            newMessage = ""
+            commentsState = PostCommentsState.Loading,
+            comments = emptyMap(),
+            newComment = "",
+            postNewCommentState = PostNewCommentState.Writing
         )
     )
 
@@ -44,77 +45,84 @@ class PostDetailsViewModel(
                 return@launch
             }
             viewState.update { it.copy(post = post) }
-            fetchMessages()
+            fetchComments()
         }
     }
 
-    private suspend fun fetchMessages() {
+    private suspend fun fetchComments() {
         try {
-            val messagesMap = withContext(Dispatchers.IO) {
-                val messagesCollection: CollectionReference =
+            val commentsMap = withContext(Dispatchers.IO) {
+                val commentsCollection: CollectionReference =
                     firebaseFirestore.collection("Posts").document(postId)
-                        .collection("Messages")
-                messagesCollection.get().await().associate { document: QueryDocumentSnapshot ->
-                    val messageData = document.toObject(Message::class.java)
-                    println("PostDetailsViewModel - get - message = $messageData")
-                    document.id to messageData
+                        .collection("Messages") //Aquí no lo cambio pq en Firebase se llama Messages y no se cambiarlo todavía
+                commentsCollection.get().await().associate { document: QueryDocumentSnapshot ->
+                    val commentData = document.toObject(Comment::class.java)
+                    println("PostDetailsViewModel - get - comment = $commentData")
+                    document.id to commentData
                 }
             }
-            println("PostDetailsViewModel - messagesMap = $messagesMap")
-            if (messagesMap.isEmpty()) {
-                viewState.update { it.copy(messagesState = PostMessagesState.Empty) }
+            println("PostDetailsViewModel - commentesMap = $commentsMap")
+            if (commentsMap.isEmpty()) {
+                viewState.update { it.copy(commentsState = PostCommentsState.Empty) }
             } else {
                 viewState.update {
                     it.copy(
-                        messagesState = PostMessagesState.Success,
-                        messages = messagesMap
+                        commentsState = PostCommentsState.Success,
+                        comments = commentsMap
                     )
                 }
             }
         } catch (exception: Exception) {
             viewState.update {
                 it.copy(
-                    messagesState = PostMessagesState.Error(
+                    commentsState = PostCommentsState.Error(
                         exception.message ?: "Oops, error loading Posts.."
                     )
                 )
             }
         } finally {
-            println("PostDetailsViewModel - messagesState = ${viewState.value.messagesState}")
+            println("PostDetailsViewModel - commentsState = ${viewState.value.commentsState}")
         }
     }
 
     fun onBackButtonClicked() = navController.navigateUp()
 
+    fun onCommentTextChanged(newText: String) {
+        viewState.update { it.copy(newComment = newText) }
+    }
+
     fun onReplyButtonClicked() {
         println("PostDetailsViewModel - onReplyButtonClicked")
         viewModelScope.launch {
             try {
+                viewState.update { it.copy(postNewCommentState = PostNewCommentState.Sending) }
                 val result: DocumentReference = withContext(Dispatchers.IO) {
-                    val messagesCollection = firebaseFirestore.collection("Posts").document(postId)
+                    val commentsCollection = firebaseFirestore.collection("Posts").document(postId)
                         .collection("Messages")
-                    messagesCollection.add(
-                        Message(
+                    commentsCollection.add(
+                        Comment(
                             userId = currentUser.uid,
                             userName = currentUser.displayName ?: "Unknown",
                             userPicUrl = currentUser.photoUrl.toString(),
-                            message = "new messagee", // viewState.value.newMessage,
-                            createdAt = Instant.now().epochSecond
+                            body = viewState.value.newComment,
+                            commentTimeStamp = Instant.now().epochSecond
                         )
                     ).await()
                 }
                 println("PostDetailsViewModel - result = $result")
-                fetchMessages()
+                viewState.update { it.copy(postNewCommentState = PostNewCommentState.Success) }
+                fetchComments()
+                viewState.update { it.copy(newComment = "") }
             } catch (exception: Exception) {
-//                viewState.update {
-//                    it.copy(
-//                        createNewMessageState = CreateNewMessageState.Error(
-//                            exception.message ?: "Oops, error creating the post"
-//                        )
-//                    )
-//                }
+                viewState.update {
+                    it.copy(
+                        postNewCommentState = PostNewCommentState.Error(
+                            exception.message ?: "Oops, error creating the comment"
+                        )
+                    )
+                }
             } finally {
-                println("PostDetailsViewModel - createNewMessageState")
+                println("PostDetailsViewModel - postNewCommentState=${viewState.value.postNewCommentState}")
             }
         }
     }
@@ -122,14 +130,22 @@ class PostDetailsViewModel(
 
 data class PostDetailsViewState(
     val post: Post?,
-    val messagesState: PostMessagesState,
-    val messages: Map<String, Message>,
-    val newMessage: String
+    val commentsState: PostCommentsState,
+    val comments: Map<String, Comment>,
+    val newComment: String,
+    val postNewCommentState: PostNewCommentState
 )
 
-sealed class PostMessagesState {
-    data object Loading : PostMessagesState()
-    data object Success : PostMessagesState()
-    data object Empty : PostMessagesState()
-    data class Error(val errorMessage: String) : PostMessagesState()
+sealed class PostCommentsState {
+    data object Loading : PostCommentsState()
+    data object Success : PostCommentsState()
+    data object Empty : PostCommentsState()
+    data class Error(val errorMessage: String) : PostCommentsState()
+}
+
+sealed class PostNewCommentState {
+    data object Writing : PostNewCommentState()
+    data object Sending : PostNewCommentState()
+    data object Success : PostNewCommentState()
+    data class Error(val errorMessage: String) : PostNewCommentState()
 }

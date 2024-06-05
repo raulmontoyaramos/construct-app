@@ -1,6 +1,8 @@
 package com.example.constructapp.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,14 +20,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.rounded.Create
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CardElevation
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -37,16 +42,19 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.constructapp.R
@@ -54,7 +62,7 @@ import com.example.constructapp.data.Post
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +76,9 @@ fun DashboardScreen(
             TopAppBar(
                 title = { Text(text = "Posts") },
                 navigationIcon = {
-                    ConstructAppLogo(
+                    Image(
+                        painter = painterResource(R.drawable.logo),
+                        contentDescription = "Logo",
                         modifier = Modifier
                             .size(dimensionResource(R.dimen.topbar_logo_size))
                             .padding(start = dimensionResource(R.dimen.topbar_logo_padding_start))
@@ -78,13 +88,14 @@ fun DashboardScreen(
                     Image(
                         modifier = Modifier
                             .clip(CircleShape)
-                            .size(dimensionResource(R.dimen.topbar_profile_image_size)),
-                        painter = rememberAsyncImagePainter(viewState.userPicUrl), //Ésto es de la librería de Coil
-                        contentDescription = "User profile picture",
+                            .size(dimensionResource(R.dimen.topbar_profile_image_size))
+                            .clickable { viewModel.fetchPosts() },
+                        painter = rememberAsyncImagePainter(viewState.userPicUrl),
+                        contentDescription = "Profile picture",
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     IconButton(onClick = viewModel::onSignOutClicked) {
-                        Icon(Icons.Filled.ExitToApp, null)
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, null)
                     }
                 }
             )
@@ -92,59 +103,90 @@ fun DashboardScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = viewModel::onCreatePostClicked,
-                modifier = Modifier.padding(bottom = 56.dp) // Añadido padding para elevar el FAB sobre la BottomAppBar
+                modifier = Modifier.padding(bottom = 56.dp)
             ) {
                 Icon(Icons.Rounded.Create, "Create new post")
             }
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            Spacer(modifier = Modifier.height(16.dp)) // Añadir espacio debajo de la TopAppBar
-            when (viewState.dashboardState) {
-                DashboardState.Loading ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Spacer(modifier = Modifier.height(64.dp))
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(text = "Loading posts..")
-                    }
+            if (viewState.posts.isEmpty()) {
+                when (viewState.dashboardState) {
+                    DashboardState.Loading ->
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                CircularProgressIndicator()
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(text = "Loading posts..")
+                            }
+                        }
 
-                DashboardState.Success ->
+                    DashboardState.Success ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(text = "No posts available yet..")
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Button(onClick = viewModel::fetchPosts) {
+                                    Text(text = "Retry")
+                                }
+                            }
+                        }
+
+                    is DashboardState.Error ->
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = viewState.dashboardState.errorMessage)
+                        }
+
+                }
+            } else {
+                PullToRefreshBox(
+                    isRefreshing = viewState.isRefreshing,
+                    onRefresh = viewModel::fetchPosts,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Spacer(modifier = Modifier.height(16.dp)) // Añadir espacio debajo de la TopAppBar
                     DashboardScreenContent(
                         viewState = viewState,
                         onTabPressed = { viewModel.onTabPressed(it) },
                         onPostClick = { viewModel.onPostClicked(it) }
                     )
+                }
+                when (viewState.dashboardState) {
+                    DashboardState.Loading,
+                    DashboardState.Success -> Unit
 
-                DashboardState.Empty ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "No posts available yet..")
+                    is DashboardState.Error -> {
+                        val context = LocalContext.current
+                        LaunchedEffect(key1 = Unit) {
+                            Toast.makeText(
+                                context,
+                                viewState.dashboardState.errorMessage,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
-
-                is DashboardState.Error ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = viewState.dashboardState.errorMessage)
-                    }
+                }
             }
         }
     }
@@ -225,7 +267,7 @@ fun PostsList(
         items(posts.toList(), key = { (postId, _) -> postId }) { (postId, post) ->
             PostsListItem(
                 post = post,
-                isSelected = false,
+                enabled = true,
                 onCardClick = { onPostClick(postId) }
             )
         }
@@ -235,31 +277,30 @@ fun PostsList(
 @Composable
 fun PostsListItem(
     post: Post,
-    onCardClick: () -> Unit,
-    isSelected: Boolean,
-    modifier: Modifier = Modifier
+    enabled: Boolean,
+    onCardClick: () -> Unit = {},
+    elevation: Dp = 0.dp
 ) {
     Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.secondaryContainer
-            }
-        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                shape = RoundedCornerShape(8.dp),
+                elevation = elevation
+            ),
+        enabled = enabled,
         onClick = onCardClick
     ) {
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(dimensionResource(R.dimen.email_list_item_inner_padding))
         ) {
             PostItemHeader(
                 post = post,
-                modifier = modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             )
-            if (post.description.isNotEmpty()) {
+            if (post.title.isNotEmpty()) {
                 Text(
                     text = post.title,
                     style = MaterialTheme.typography.bodyLarge,
@@ -285,7 +326,11 @@ fun PostsListItem(
 }
 
 @Composable
-private fun PostItemHeader(post: Post, modifier: Modifier = Modifier) {
+fun PostItemHeader(post: Post, modifier: Modifier = Modifier) {
+    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy, HH:mm", Locale.getDefault())
+    val formattedDateTime = Instant.ofEpochSecond(post.createdAt)
+        .atZone(ZoneId.systemDefault())
+        .format(formatter)
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
@@ -308,38 +353,10 @@ private fun PostItemHeader(post: Post, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.labelMedium
             )
             Text(
-                text = DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochSecond(post.createdAt)),
+                text = formattedDateTime,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.outline
             )
         }
     }
-}
-
-@Composable
-fun UserProfileImage(
-    imageUrl: String,
-    description: String,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier = modifier) {
-        Image(
-            modifier = Modifier.clip(CircleShape),
-            painter = rememberAsyncImagePainter(imageUrl), //Ésto es de la librería de Coil
-            contentDescription = description,
-        )
-    }
-}
-
-@Composable
-fun ConstructAppLogo(
-    modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary
-) {
-    Image(
-        painter = painterResource(R.drawable.logo),
-        contentDescription = "Logo de ConstructApp",
-        colorFilter = ColorFilter.tint(color),
-        modifier = modifier
-    )
 }

@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.example.constructapp.data.Post
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
@@ -15,9 +14,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.time.Instant
+import java.time.ZoneId
 
 class CreatePostViewModel(
-    private val firebaseAuth: FirebaseAuth,
     private val currentUser: FirebaseUser,
     private val firebaseFirestore: FirebaseFirestore,
     private val navController: NavController
@@ -69,7 +68,7 @@ class CreatePostViewModel(
 
     fun onBackButtonClicked() = navController.navigateUp()
 
-    fun onOkClicked() = navController.navigateUp()
+    fun onOkClicked() = navController.popBackStack()
 
     fun onTitleUpdated(newTitle: String) {
         viewState.update { it.copy(title = newTitle) }

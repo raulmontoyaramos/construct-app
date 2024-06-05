@@ -9,6 +9,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -23,7 +26,6 @@ import com.example.constructapp.screens.DashboardViewModel
 import com.example.constructapp.screens.PostDetailsScreen
 import com.example.constructapp.screens.PostDetailsViewModel
 import com.example.constructapp.screens.SignInScreen
-import com.example.constructapp.screens.SignInViewModel
 import com.example.constructapp.ui.theme.ConstructAppTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -54,53 +56,67 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.padding(innerPadding)
                         ) {
                             composable<SignIn> {
-                                SignInScreen(
-                                    SignInViewModel(
-                                        firebaseAuth = FirebaseAuth.getInstance(),
-                                        navController = navController
-                                    )
-                                )
+                                SignInScreen(navController = navController)
                             }
                             composable<Dashboard> {
-                                DashboardScreen(
-                                    DashboardViewModel(
-                                        firebaseAuth = FirebaseAuth.getInstance(),
-                                        firebaseFirestore = FirebaseFirestore.getInstance(),
-                                        repository = repository,
-                                        navController = navController
-                                    )
-                                )
+                                val viewModel =
+                                    viewModel<DashboardViewModel>(factory = viewModelFactory {
+                                        DashboardViewModel(
+                                            firebaseAuth = FirebaseAuth.getInstance(),
+                                            firebaseFirestore = FirebaseFirestore.getInstance(),
+                                            repository = repository,
+                                            navController = navController
+                                        )
+                                    })
+                                DashboardScreen(viewModel)
                             }
                             composable<PostDetails>(
                                 typeMap = mapOf(typeOf<Post>() to parcelableType<Post>())
                             ) {
                                 val postId = it.toRoute<PostDetails>().postId
                                 println("PostDetails - postId=$postId")
-                                PostDetailsScreen(
-                                    PostDetailsViewModel(
-                                        firebaseFirestore = FirebaseFirestore.getInstance(),
-                                        postId = postId,
-                                        repository = repository,
-                                        navController = navController
-                                    )
-                                )
+                                FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+                                    val viewModel: PostDetailsViewModel =
+                                        viewModel<PostDetailsViewModel>(factory = viewModelFactory {
+                                            PostDetailsViewModel(
+                                                firebaseFirestore = FirebaseFirestore.getInstance(),
+                                                postId = postId,
+                                                currentUser = currentUser,
+                                                repository = repository,
+                                                navController = navController
+                                            )
+                                        })
+                                    PostDetailsScreen(viewModel)
+                                } ?: navController.popBackStack()
                             }
                             composable<CreatePost> {
                                 FirebaseAuth.getInstance().currentUser?.let { currentUser ->
-                                    CreatePostScreen(
-                                        CreatePostViewModel(
-                                            firebaseAuth = FirebaseAuth.getInstance(),
-                                            currentUser = currentUser,
-                                            firebaseFirestore = FirebaseFirestore.getInstance(),
-                                            navController = navController
-                                        )
-                                    )
+                                    val viewModel =
+                                        viewModel<CreatePostViewModel>(factory = viewModelFactory {
+                                            CreatePostViewModel(
+                                                currentUser = currentUser,
+                                                firebaseFirestore = FirebaseFirestore.getInstance(),
+                                                navController = navController
+                                            )
+                                        })
+                                    CreatePostScreen(viewModel)
                                 } ?: navController.popBackStack()
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+fun <VM : ViewModel> viewModelFactory(createViewModel: () -> VM)
+        : ViewModelProvider.Factory {
+
+    return object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return createViewModel() as T
         }
     }
 }

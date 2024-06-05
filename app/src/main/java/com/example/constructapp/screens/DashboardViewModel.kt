@@ -2,7 +2,6 @@ package com.example.constructapp.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.constructapp.CreatePost
 import com.example.constructapp.PostDetails
@@ -30,10 +29,13 @@ class DashboardViewModel(
     val viewState = MutableStateFlow(
         DashboardViewState(
             userPicUrl = firebaseAuth.currentUser?.photoUrl?.toString().orEmpty(),
-            posts = emptyMap(),
-            dashboardState = DashboardState.Loading,
             selectedTab = DashboardTab.POSTS,
-            isRefreshing = false
+            posts = emptyMap(),
+            dashboardPostsState = DashboardPostsState.Loading,
+            isRefreshingPosts = false,
+            postsFiltered = emptyMap(),
+            dashboardPostsStateFiltered = DashboardPostsState.Loading,
+            isRefreshingPostsFiltered = false
         )
     )
 
@@ -45,8 +47,8 @@ class DashboardViewModel(
         viewModelScope.launch {
             viewState.update {
                 it.copy(
-                    dashboardState = DashboardState.Loading,
-                    isRefreshing = true
+                    dashboardPostsState = DashboardPostsState.Loading,
+                    isRefreshingPosts = true
                 )
             }
             try {
@@ -62,22 +64,22 @@ class DashboardViewModel(
 
                 viewState.update {
                     it.copy(
-                        dashboardState = DashboardState.Success,
+                        dashboardPostsState = DashboardPostsState.Success,
                         posts = postsMap,
-                        isRefreshing = false
+                        isRefreshingPosts = false
                     )
                 }
             } catch (exception: Exception) {
                 viewState.update {
                     it.copy(
-                        dashboardState = DashboardState.Error(
+                        dashboardPostsState = DashboardPostsState.Error(
                             exception.message ?: "Oops, error loading Posts.."
                         ),
-                        isRefreshing = false
+                        isRefreshingPosts = false
                     )
                 }
             } finally {
-                println("DashboardViewModel - dashboardState = ${viewState.value.dashboardState}")
+                println("DashboardViewModel - dashboardState = ${viewState.value.dashboardPostsState}")
             }
         }
     }
@@ -107,18 +109,21 @@ class DashboardViewModel(
 
 data class DashboardViewState(
     val userPicUrl: String,
-    val posts: Map<String, Post>,
-    val dashboardState: DashboardState,
     val selectedTab: DashboardTab,
-    val isRefreshing: Boolean
+    val posts: Map<String, Post>,
+    val dashboardPostsState: DashboardPostsState,
+    val isRefreshingPosts: Boolean,
+    val postsFiltered: Map<String, Post>,
+    val dashboardPostsStateFiltered: DashboardPostsState,
+    val isRefreshingPostsFiltered: Boolean
 )
 
 enum class DashboardTab {
     POSTS, MESSAGES
 }
 
-sealed class DashboardState {
-    data object Loading : DashboardState()
-    data object Success : DashboardState()
-    data class Error(val errorMessage: String) : DashboardState()
+sealed class DashboardPostsState {
+    data object Loading : DashboardPostsState()
+    data object Success : DashboardPostsState()
+    data class Error(val errorMessage: String) : DashboardPostsState()
 }

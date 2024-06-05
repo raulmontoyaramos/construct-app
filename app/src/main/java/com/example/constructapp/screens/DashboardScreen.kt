@@ -29,8 +29,6 @@ import androidx.compose.material.icons.rounded.Create
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CardElevation
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -115,8 +113,8 @@ fun DashboardScreen(
                 .fillMaxSize()
         ) {
             if (viewState.posts.isEmpty()) {
-                when (viewState.dashboardState) {
-                    DashboardState.Loading ->
+                when (viewState.dashboardPostsState) {
+                    DashboardPostsState.Loading ->
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -131,7 +129,7 @@ fun DashboardScreen(
                             }
                         }
 
-                    DashboardState.Success ->
+                    DashboardPostsState.Success ->
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -150,18 +148,18 @@ fun DashboardScreen(
                             }
                         }
 
-                    is DashboardState.Error ->
+                    is DashboardPostsState.Error ->
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = viewState.dashboardState.errorMessage)
+                            Text(text = viewState.dashboardPostsState.errorMessage)
                         }
 
                 }
             } else {
                 PullToRefreshBox(
-                    isRefreshing = viewState.isRefreshing,
+                    isRefreshing = viewState.isRefreshingPosts,
                     onRefresh = viewModel::fetchPosts,
                     modifier = Modifier.fillMaxSize()
                 ) {
@@ -172,16 +170,16 @@ fun DashboardScreen(
                         onPostClick = { viewModel.onPostClicked(it) }
                     )
                 }
-                when (viewState.dashboardState) {
-                    DashboardState.Loading,
-                    DashboardState.Success -> Unit
+                when (viewState.dashboardPostsState) {
+                    DashboardPostsState.Loading,
+                    DashboardPostsState.Success -> Unit
 
-                    is DashboardState.Error -> {
+                    is DashboardPostsState.Error -> {
                         val context = LocalContext.current
                         LaunchedEffect(key1 = Unit) {
                             Toast.makeText(
                                 context,
-                                viewState.dashboardState.errorMessage,
+                                viewState.dashboardPostsState.errorMessage,
                                 Toast.LENGTH_SHORT
                             ).show()
                         }

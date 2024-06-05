@@ -1,5 +1,6 @@
 package com.example.constructapp.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,8 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,12 +33,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,7 +51,6 @@ import androidx.compose.ui.zIndex
 import coil.compose.rememberAsyncImagePainter
 import com.example.constructapp.R
 import com.example.constructapp.data.Comment
-import com.example.constructapp.data.Post
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -86,38 +89,76 @@ fun PostDetailsScreen(viewModel: PostDetailsViewModel) {
                     .padding(16.dp)
             ) {
                 viewState.post?.let {
-                    PostsInDetails(
+                    PostsListItem(
                         post = it,
-                        enabled = false
+                        enabled = false,
+                        elevation = 8.dp
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    when (viewState.commentsState) {
-                        PostCommentsState.Empty -> Box(Modifier.weight(1f)) {
-                            Text(text = "No comments yet..")
-                        }
-
-                        is PostCommentsState.Error -> Box(
+                    if (viewState.comments.isEmpty()) {
+                        Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(16.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = viewState.commentsState.errorMessage)
-                        }
+                            when (viewState.commentsState) {
+                                PostCommentsState.Loading ->
+                                    CircularProgressIndicator()
 
-                        PostCommentsState.Loading -> Box(Modifier.weight(1f)) {
-                            CircularProgressIndicator()
-                        }
+                                is PostCommentsState.Error ->
+                                    Text(text = viewState.commentsState.errorMessage)
 
-                        PostCommentsState.Success -> LazyColumn(Modifier.weight(1f)) {
-                            items(
-                                viewState.comments.toList(),
-                                key = { (id, _) -> id }) { (id, comment) ->
-                                CommentsListItem(comment = comment)
-                                Spacer(modifier = Modifier.height(8.dp))
+                                PostCommentsState.Success ->
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(text = "No comments yet..")
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Button(onClick = viewModel::fetchComments) {
+                                            Text(text = "Retry")
+                                        }
+                                    }
                             }
+                        }
+                    } else {
+                        PullToRefreshBox(
+                            isRefreshing = viewState.isRefreshing,
+                            onRefresh = viewModel::fetchComments,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            LazyColumn(
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(start = 16.dp)
+                            ) {
+                                items(
+                                    viewState.comments.toList(),
+                                    key = { (id, _) -> id }) { (id, comment) ->
+                                    CommentsListItem(comment = comment)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+                            }
+                        }
+                        when (viewState.commentsState) {
+                            is PostCommentsState.Error -> {
+                                val context = LocalContext.current
+                                LaunchedEffect(key1 = Unit) {
+                                    Toast.makeText(
+                                        context,
+                                        viewState.commentsState.errorMessage,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+
+                            PostCommentsState.Loading,
+                            PostCommentsState.Success -> Unit
                         }
                     }
                 }
@@ -127,70 +168,11 @@ fun PostDetailsScreen(viewModel: PostDetailsViewModel) {
 }
 
 @Composable
-fun PostsInDetails(
-    post: Post,
-    enabled: Boolean,
-    onCardClick: () -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .zIndex(1f),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primary
-        ),
-        enabled = enabled,
-        onClick = onCardClick
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(dimensionResource(R.dimen.email_list_item_inner_padding))
-        ) {
-            PostItemHeader(
-                post = post,
-                modifier = Modifier.fillMaxWidth()
-            )
-            if (post.title.isNotEmpty()) {
-                Text(
-                    text = post.title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(
-                        top = dimensionResource(R.dimen.email_list_item_header_subject_spacing),
-                        bottom = dimensionResource(R.dimen.email_list_item_subject_body_spacing)
-                    ),
-                )
-            }
-
-            if (post.description.isNotEmpty()) {
-                Text(
-                    text = post.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 2,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun CommentsListItem(
-    comment: Comment,
-    enabled: Boolean = false,
-    onCardClick: () -> Unit = {}
+    comment: Comment
 ) {
     Card(
-        onClick = onCardClick,
-        modifier = Modifier.fillMaxWidth(),
-        enabled = enabled,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.inversePrimary
-        ),
-        elevation = CardDefaults.cardElevation(8.dp)
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
@@ -239,7 +221,7 @@ fun CommentHeader(comment: Comment, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.labelMedium
             )
             Text(
-                text = DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochSecond(comment.commentTimeStamp)),
+                text = DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochSecond(comment.createdAt)),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.outline
             )

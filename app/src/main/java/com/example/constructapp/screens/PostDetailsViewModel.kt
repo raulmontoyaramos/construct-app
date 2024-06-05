@@ -7,9 +7,9 @@ import com.example.constructapp.data.Comment
 import com.example.constructapp.data.Post
 import com.example.constructapp.data.Repository
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QueryDocumentSnapshot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +33,8 @@ class PostDetailsViewModel(
             commentsState = PostCommentsState.Loading,
             comments = emptyMap(),
             newComment = "",
-            postNewCommentState = PostNewCommentState.Writing
+            postNewCommentState = PostNewCommentState.Writing,
+            isRefreshing = false
         )
     )
 
@@ -49,39 +50,45 @@ class PostDetailsViewModel(
         }
     }
 
-    private suspend fun fetchComments() {
-        try {
-            val commentsMap = withContext(Dispatchers.IO) {
-                val commentsCollection: CollectionReference =
-                    firebaseFirestore.collection("Posts").document(postId)
-                        .collection("Messages")
-                commentsCollection.get().await().associate { document: QueryDocumentSnapshot ->
-                    val commentData = document.toObject(Comment::class.java)
-                    println("PostDetailsViewModel - get - comment = $commentData")
-                    document.id to commentData
-                }
+    fun fetchComments() {
+        viewModelScope.launch {
+            viewState.update {
+                it.copy(
+                    commentsState = PostCommentsState.Loading,
+                    isRefreshing = true
+                )
             }
-            println("PostDetailsViewModel - commentesMap = $commentsMap")
-            if (commentsMap.isEmpty()) {
-                viewState.update { it.copy(commentsState = PostCommentsState.Empty) }
-            } else {
+            try {
+                val commentsMap = withContext(Dispatchers.IO) {
+                    firebaseFirestore
+                        .collection("Posts")
+                        .document(postId)
+                        .collection("Messages")
+                        .orderBy("createdAt", Query.Direction.DESCENDING)
+                        .get().await().associate { document: QueryDocumentSnapshot ->
+                            document.id to document.toObject(Comment::class.java)
+                        }
+                }
+                println("PostDetailsViewModel - commentesMap = $commentsMap")
                 viewState.update {
                     it.copy(
                         commentsState = PostCommentsState.Success,
-                        comments = commentsMap
+                        comments = commentsMap,
+                        isRefreshing = false
                     )
                 }
-            }
-        } catch (exception: Exception) {
-            viewState.update {
-                it.copy(
-                    commentsState = PostCommentsState.Error(
-                        exception.message ?: "Oops, error loading Posts.."
+            } catch (exception: Exception) {
+                viewState.update {
+                    it.copy(
+                        commentsState = PostCommentsState.Error(
+                            exception.message ?: "Oops, error loading Posts.."
+                        ),
+                        isRefreshing = false
                     )
-                )
+                }
+            } finally {
+                println("PostDetailsViewModel - commentsState = ${viewState.value.commentsState}")
             }
-        } finally {
-            println("PostDetailsViewModel - commentsState = ${viewState.value.commentsState}")
         }
     }
 
@@ -105,7 +112,7 @@ class PostDetailsViewModel(
                             userName = currentUser.displayName ?: "Unknown",
                             userPicUrl = currentUser.photoUrl.toString(),
                             body = viewState.value.newComment,
-                            commentTimeStamp = Instant.now().epochSecond
+                            createdAt = Instant.now().epochSecond
                         )
                     ).await()
                 }
@@ -159,13 +166,13 @@ data class PostDetailsViewState(
     val commentsState: PostCommentsState,
     val comments: Map<String, Comment>,
     val newComment: String,
-    val postNewCommentState: PostNewCommentState
+    val postNewCommentState: PostNewCommentState,
+    val isRefreshing: Boolean
 )
 
 sealed class PostCommentsState {
     data object Loading : PostCommentsState()
     data object Success : PostCommentsState()
-    data object Empty : PostCommentsState()
     data class Error(val errorMessage: String) : PostCommentsState()
 }
 

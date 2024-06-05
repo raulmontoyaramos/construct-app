@@ -2,7 +2,7 @@ package com.example.constructapp.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.example.constructapp.data.Comment
 import com.example.constructapp.data.Post
 import com.example.constructapp.data.Repository
@@ -21,7 +21,7 @@ import java.time.Instant
 
 class PostDetailsViewModel(
     private val firebaseFirestore: FirebaseFirestore,
-    private val navController: NavController,
+    private val navController: NavHostController,
     private val postId: String,
     private val currentUser: FirebaseUser,
     private val repository: Repository
@@ -54,7 +54,7 @@ class PostDetailsViewModel(
             val commentsMap = withContext(Dispatchers.IO) {
                 val commentsCollection: CollectionReference =
                     firebaseFirestore.collection("Posts").document(postId)
-                        .collection("Messages") //Aquí no lo cambio pq en Firebase se llama Messages y no se cambiarlo todavía
+                        .collection("Messages")
                 commentsCollection.get().await().associate { document: QueryDocumentSnapshot ->
                     val commentData = document.toObject(Comment::class.java)
                     println("PostDetailsViewModel - get - comment = $commentData")
@@ -110,9 +110,13 @@ class PostDetailsViewModel(
                     ).await()
                 }
                 println("PostDetailsViewModel - result = $result")
-                viewState.update { it.copy(postNewCommentState = PostNewCommentState.Success) }
+                viewState.update {
+                    it.copy(
+                        postNewCommentState = PostNewCommentState.Success,
+                        newComment = ""
+                    )
+                }
                 fetchComments()
-                viewState.update { it.copy(newComment = "") }
             } catch (exception: Exception) {
                 viewState.update {
                     it.copy(
@@ -126,6 +130,28 @@ class PostDetailsViewModel(
             }
         }
     }
+
+    fun onDeleteCommentClicked(commentId: String) { //Tendría que agregar un campo commentId a la colección Messages
+        viewModelScope.launch {    //o tendríamos que hacer un repositorio como para el id del Post?
+            try {
+                withContext(Dispatchers.IO) {
+                    val comment = firebaseFirestore.collection("Posts").document(postId)
+                        .collection("Messages").document(commentId)
+                    comment.delete().await()
+                }
+                fetchComments()
+            } catch (exception: Exception) {
+                viewState.update {
+                    it.copy(
+                        commentsState = PostCommentsState.Error(
+                            exception.message ?: "Oops, error deleting the comment"
+                        )
+                    )
+                }
+            }
+        }
+    }
+
 }
 
 data class PostDetailsViewState(
@@ -144,8 +170,9 @@ sealed class PostCommentsState {
 }
 
 sealed class PostNewCommentState {
-    data object Writing : PostNewCommentState()
-    data object Sending : PostNewCommentState()
-    data object Success : PostNewCommentState()
-    data class Error(val errorMessage: String) : PostNewCommentState()
+    data object Writing : PostNewCommentState() //pongo Unit pq es lo que ya hay en pantalla?
+    data object Sending : PostNewCommentState() //pongo el círculo de carga?
+    data object Success : PostNewCommentState() //pongo un toast con mensaje de éxito?
+    data class Error(val errorMessage: String) :
+        PostNewCommentState() //pongo un toast con mensaje de error?
 }

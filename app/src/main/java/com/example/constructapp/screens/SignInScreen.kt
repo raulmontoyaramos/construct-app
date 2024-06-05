@@ -1,51 +1,52 @@
 package com.example.constructapp.screens
 
+import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
+import com.example.constructapp.Dashboard
 import com.example.constructapp.R
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun SignInScreen(
-    viewModel: SignInViewModel
+    navController: NavController
 ) {
+    val activity = LocalContext.current as Activity
     val signInLauncher = rememberLauncherForActivityResult(
         contract = FirebaseAuthUIActivityResultContract(),
-        onResult = viewModel::onSignInResult
-    )
-
-    val viewState = viewModel.viewState.collectAsState().value
-    println("SignInScreen - viewState = $viewState")
-    if (!viewState.userSignedIn) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Button(onClick = {
-                signInLauncher.launch(
-                    AuthUI.getInstance()
-                        .createSignInIntentBuilder()
-                        .setAvailableProviders(
-                            listOf(
-                                AuthUI.IdpConfig.GoogleBuilder().build(),
-                                AuthUI.IdpConfig.EmailBuilder().build(),
-                            )
-                        )
-                        .setLogo(R.drawable.logo)
-                        .setTheme(R.style.Theme_ConstructApp)
-                        .build()
-                )
-            }) {
-                Text(text = "Sign in with Google")
+        onResult = { result ->
+            println("SignInScreen - FirebaseAuthUIActivityResultContract: result = $result")
+            println("SignInScreen - FirebaseAuthUIActivityResultContract: resultCode = ${result.resultCode}")
+            if (FirebaseAuth.getInstance().currentUser != null) {
+                println("SignInScreen - FirebaseAuthUIActivityResultContract: SignIn success!")
+                navController.navigate(Dashboard) { launchSingleTop = true }
+            } else {
+                println("SignInScreen - FirebaseAuthUIActivityResultContract: SignIn failed!")
+                activity.finish()
             }
         }
+    )
+
+    LaunchedEffect(key1 = Unit) {
+        signInLauncher.launch(
+            AuthUI.getInstance()
+                .createSignInIntentBuilder()
+                .setAlwaysShowSignInMethodScreen(true)
+                .setIsSmartLockEnabled(false)
+                .setAvailableProviders(
+                    listOf(
+                        AuthUI.IdpConfig.GoogleBuilder().build(),
+                        // AuthUI.IdpConfig.EmailBuilder().build(),
+                    )
+                )
+                .setLogo(R.drawable.logo)
+                .setTheme(R.style.Theme_ConstructApp)
+                .build()
+        )
     }
 }

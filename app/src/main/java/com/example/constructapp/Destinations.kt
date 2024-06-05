@@ -18,6 +18,3 @@ object CreatePost
 data class PostDetails(
     val postId: String
 ) : Parcelable
-
-@Serializable
-object MessagesScreen

@@ -67,7 +67,7 @@ class CreatePostViewModel(
 
     fun onBackButtonClicked() = navController.navigateUp()
 
-    fun onOkClicked() = navController.navigateUp()
+    fun onOkClicked() = navController.popBackStack()
 
     fun onTitleUpdated(newTitle: String) {
         viewState.update { it.copy(title = newTitle) }

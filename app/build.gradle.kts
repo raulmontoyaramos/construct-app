@@ -61,7 +61,8 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
+    // implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material3:material3:1.3.0-beta02")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.material3:material3-window-size-class")
 
@@ -69,7 +70,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
     // Import the Firebase BoM
-    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
 
     // When using the BoM, don't specify versions in Firebase dependencies
     implementation("com.google.firebase:firebase-analytics")
@@ -89,10 +90,10 @@ dependencies {
     // some classes to another library (androidx.credentials) and those will be missing in the last version
     implementation("com.google.android.gms:play-services-auth:20.6.0")
 
-    implementation("androidx.navigation:navigation-compose:2.8.0-beta01")
+    implementation("androidx.navigation:navigation-compose:2.8.0-beta02")
 
     //Librería coil
-    implementation("io.coil-kt:coil-compose:2.1.0")
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

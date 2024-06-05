@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import com.example.constructapp.CreatePost
 import com.example.constructapp.PostDetails
 import com.example.constructapp.SignIn
+import com.example.constructapp.data.Comment
 import com.example.constructapp.data.Post
 import com.example.constructapp.data.Repository
 import com.google.firebase.auth.FirebaseAuth
@@ -31,23 +32,24 @@ class DashboardViewModel(
             userPicUrl = firebaseAuth.currentUser?.photoUrl?.toString().orEmpty(),
             selectedTab = DashboardTab.POSTS,
             posts = emptyMap(),
-            dashboardPostsState = DashboardPostsState.Loading,
+            dashboardPostsState = DashboardFetchState.Loading,
             isRefreshingPosts = false,
-            postsFiltered = emptyMap(),
-            dashboardPostsStateFiltered = DashboardPostsState.Loading,
-            isRefreshingPostsFiltered = false
+            comments = emptyMap(),
+            dashboardCommentsState = DashboardFetchState.Loading,
+            isRefreshingComments = false
         )
     )
 
     init {
         fetchPosts()
+        fetchComments()
     }
 
     fun fetchPosts() {
         viewModelScope.launch {
             viewState.update {
                 it.copy(
-                    dashboardPostsState = DashboardPostsState.Loading,
+                    dashboardPostsState = DashboardFetchState.Loading,
                     isRefreshingPosts = true
                 )
             }
@@ -64,7 +66,7 @@ class DashboardViewModel(
 
                 viewState.update {
                     it.copy(
-                        dashboardPostsState = DashboardPostsState.Success,
+                        dashboardPostsState = DashboardFetchState.Success,
                         posts = postsMap,
                         isRefreshingPosts = false
                     )
@@ -72,14 +74,57 @@ class DashboardViewModel(
             } catch (exception: Exception) {
                 viewState.update {
                     it.copy(
-                        dashboardPostsState = DashboardPostsState.Error(
+                        dashboardPostsState = DashboardFetchState.Error(
                             exception.message ?: "Oops, error loading Posts.."
                         ),
                         isRefreshingPosts = false
                     )
                 }
             } finally {
-                println("DashboardViewModel - dashboardState = ${viewState.value.dashboardPostsState}")
+                println("DashboardViewModel - dashboardPostsState = ${viewState.value.dashboardPostsState}")
+            }
+        }
+    }
+
+    fun fetchComments() {
+        viewModelScope.launch {
+            viewState.update {
+                it.copy(
+                    dashboardCommentsState = DashboardFetchState.Loading,
+                    isRefreshingComments = true
+                )
+            }
+            try {
+                val commentsMap = withContext(Dispatchers.IO) {
+                    firebaseFirestore.collection("Messages")
+                        .whereEqualTo("userId", firebaseAuth.currentUser?.uid.orEmpty())
+                        .orderBy("createdAt", Query.Direction.DESCENDING)
+                        .get().await()
+                        .associate { document: QueryDocumentSnapshot ->
+                            document.id to document.toObject(Comment::class.java)
+                        }
+
+                }
+                println("DashboardViewModel - commentsMap = $commentsMap")
+
+                viewState.update {
+                    it.copy(
+                        dashboardCommentsState = DashboardFetchState.Success,
+                        comments = commentsMap,
+                        isRefreshingComments = false
+                    )
+                }
+            } catch (exception: Exception) {
+                viewState.update {
+                    it.copy(
+                        dashboardCommentsState = DashboardFetchState.Error(
+                            exception.message ?: "Oops, error loading Comments.."
+                        ),
+                        isRefreshingComments = false
+                    )
+                }
+            } finally {
+                println("DashboardViewModel - dashboardCommentsState = ${viewState.value.dashboardCommentsState}")
             }
         }
     }
@@ -111,19 +156,19 @@ data class DashboardViewState(
     val userPicUrl: String,
     val selectedTab: DashboardTab,
     val posts: Map<String, Post>,
-    val dashboardPostsState: DashboardPostsState,
+    val dashboardPostsState: DashboardFetchState,
     val isRefreshingPosts: Boolean,
-    val postsFiltered: Map<String, Post>,
-    val dashboardPostsStateFiltered: DashboardPostsState,
-    val isRefreshingPostsFiltered: Boolean
+    val comments: Map<String, Comment>,
+    val dashboardCommentsState: DashboardFetchState,
+    val isRefreshingComments: Boolean
 )
 
 enum class DashboardTab {
     POSTS, MESSAGES
 }
 
-sealed class DashboardPostsState {
-    data object Loading : DashboardPostsState()
-    data object Success : DashboardPostsState()
-    data class Error(val errorMessage: String) : DashboardPostsState()
+sealed class DashboardFetchState {
+    data object Loading : DashboardFetchState()
+    data object Success : DashboardFetchState()
+    data class Error(val errorMessage: String) : DashboardFetchState()
 }

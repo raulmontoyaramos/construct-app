@@ -114,7 +114,7 @@ fun DashboardScreen(
         ) {
             if (viewState.posts.isEmpty()) {
                 when (viewState.dashboardPostsState) {
-                    DashboardPostsState.Loading ->
+                    DashboardFetchState.Loading ->
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -129,7 +129,7 @@ fun DashboardScreen(
                             }
                         }
 
-                    DashboardPostsState.Success ->
+                    DashboardFetchState.Success ->
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -148,7 +148,7 @@ fun DashboardScreen(
                             }
                         }
 
-                    is DashboardPostsState.Error ->
+                    is DashboardFetchState.Error ->
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -171,10 +171,10 @@ fun DashboardScreen(
                     )
                 }
                 when (viewState.dashboardPostsState) {
-                    DashboardPostsState.Loading,
-                    DashboardPostsState.Success -> Unit
+                    DashboardFetchState.Loading,
+                    DashboardFetchState.Success -> Unit
 
-                    is DashboardPostsState.Error -> {
+                    is DashboardFetchState.Error -> {
                         val context = LocalContext.current
                         LaunchedEffect(key1 = Unit) {
                             Toast.makeText(
@@ -231,7 +231,7 @@ fun DashboardScreenContent(
 
                 DashboardTab.MESSAGES ->
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "Messages list")
+                        Text(text = viewState.dashboardCommentsState.toString())
                     }
             }
         }

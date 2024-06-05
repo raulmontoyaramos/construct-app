@@ -42,6 +42,7 @@ class PostDetailsViewModel(
         viewModelScope.launch {
             val post: Post? = withContext(Dispatchers.IO) { repository.getPostById(postId) }
             if (post == null) {
+                // TODO: fetch post from firestore using postId
                 navController.navigateUp()
                 return@launch
             }
@@ -104,17 +105,19 @@ class PostDetailsViewModel(
             try {
                 viewState.update { it.copy(postNewCommentState = PostNewCommentState.Sending) }
                 val result: DocumentReference = withContext(Dispatchers.IO) {
-                    val commentsCollection = firebaseFirestore.collection("Posts").document(postId)
+                    firebaseFirestore.collection("Posts")
+                        .document(postId)
                         .collection("Messages")
-                    commentsCollection.add(
-                        Comment(
-                            userId = currentUser.uid,
-                            userName = currentUser.displayName ?: "Unknown",
-                            userPicUrl = currentUser.photoUrl.toString(),
-                            body = viewState.value.newComment,
-                            createdAt = Instant.now().epochSecond
-                        )
-                    ).await()
+                        .add(
+                            Comment(
+                                userId = currentUser.uid,
+                                userName = currentUser.displayName ?: "Unknown",
+                                userPicUrl = currentUser.photoUrl.toString(),
+                                body = viewState.value.newComment,
+                                createdAt = Instant.now().epochSecond,
+                                postId = postId
+                            )
+                        ).await()
                 }
                 println("PostDetailsViewModel - result = $result")
                 viewState.update {

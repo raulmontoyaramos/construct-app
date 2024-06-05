@@ -13,6 +13,7 @@ data class Comment(
     val userPicUrl: String,
     val body: String,
     val createdAt: Long,
+    val postId: String
 ) : Parcelable {
     // Required empty constructor so we can parse the objects from firestore
     constructor() : this(
@@ -20,6 +21,7 @@ data class Comment(
         userName = "",
         userPicUrl = "",
         body = "",
-        createdAt = Instant.EPOCH.toEpochMilli()
+        createdAt = Instant.EPOCH.toEpochMilli(),
+        postId = ""
     )
 }

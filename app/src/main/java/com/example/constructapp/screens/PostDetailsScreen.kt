@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,7 +49,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import coil.compose.rememberAsyncImagePainter
 import com.example.constructapp.R
-import com.example.constructapp.data.Comment
+import com.example.constructapp.presentation.PostCommentsState
+import com.example.constructapp.presentation.PostDetailsViewModel
+import com.example.constructapp.presentation.PostDetailsViewState
+import com.example.constructapp.presentation.models.Comment
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -112,16 +114,7 @@ fun PostDetailsScreen(viewModel: PostDetailsViewModel) {
                                     Text(text = viewState.commentsState.errorMessage)
 
                                 PostCommentsState.Success ->
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.Center
-                                    ) {
-                                        Text(text = "No comments yet..")
-                                        Spacer(modifier = Modifier.height(12.dp))
-                                        Button(onClick = viewModel::fetchComments) {
-                                            Text(text = "Retry")
-                                        }
-                                    }
+                                    Text(text = "No comments yet..")
                             }
                         }
                     } else {
@@ -169,10 +162,11 @@ fun PostDetailsScreen(viewModel: PostDetailsViewModel) {
 
 @Composable
 fun CommentsListItem(
-    comment: Comment
+    comment: Comment,
+    modifier: Modifier = Modifier.fillMaxWidth()
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier
     ) {
         Column(
             modifier = Modifier

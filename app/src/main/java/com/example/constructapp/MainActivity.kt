@@ -16,15 +16,20 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.example.constructapp.data.Post
-import com.example.constructapp.data.Repository
+import com.example.constructapp.data.NetworkService
+import com.example.constructapp.data.PostsRepository
+import com.example.constructapp.navigation.CreatePost
+import com.example.constructapp.navigation.Dashboard
+import com.example.constructapp.navigation.PostDetails
+import com.example.constructapp.navigation.SignIn
 import com.example.constructapp.navigation.parcelableType
+import com.example.constructapp.presentation.CreatePostViewModel
+import com.example.constructapp.presentation.DashboardViewModel
+import com.example.constructapp.presentation.PostDetailsViewModel
+import com.example.constructapp.presentation.models.Post
 import com.example.constructapp.screens.CreatePostScreen
-import com.example.constructapp.screens.CreatePostViewModel
 import com.example.constructapp.screens.DashboardScreen
-import com.example.constructapp.screens.DashboardViewModel
 import com.example.constructapp.screens.PostDetailsScreen
-import com.example.constructapp.screens.PostDetailsViewModel
 import com.example.constructapp.screens.SignInScreen
 import com.example.constructapp.ui.theme.ConstructAppTheme
 import com.google.firebase.auth.FirebaseAuth
@@ -33,7 +38,7 @@ import kotlin.reflect.typeOf
 
 class MainActivity : ComponentActivity() {
 
-    private val repository = Repository()
+    private val postsRepository = PostsRepository()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,8 +68,10 @@ class MainActivity : ComponentActivity() {
                                     viewModel<DashboardViewModel>(factory = viewModelFactory {
                                         DashboardViewModel(
                                             firebaseAuth = FirebaseAuth.getInstance(),
-                                            firebaseFirestore = FirebaseFirestore.getInstance(),
-                                            repository = repository,
+                                            networkService = NetworkService(
+                                                FirebaseFirestore.getInstance()
+                                            ),
+                                            postsRepository = postsRepository,
                                             navController = navController
                                         )
                                     })
@@ -79,10 +86,12 @@ class MainActivity : ComponentActivity() {
                                     val viewModel: PostDetailsViewModel =
                                         viewModel<PostDetailsViewModel>(factory = viewModelFactory {
                                             PostDetailsViewModel(
-                                                firebaseFirestore = FirebaseFirestore.getInstance(),
+                                                networkService = NetworkService(
+                                                    FirebaseFirestore.getInstance()
+                                                ),
                                                 postId = postId,
                                                 currentUser = currentUser,
-                                                repository = repository,
+                                                postsRepository = postsRepository,
                                                 navController = navController
                                             )
                                         })
@@ -95,7 +104,9 @@ class MainActivity : ComponentActivity() {
                                         viewModel<CreatePostViewModel>(factory = viewModelFactory {
                                             CreatePostViewModel(
                                                 currentUser = currentUser,
-                                                firebaseFirestore = FirebaseFirestore.getInstance(),
+                                                networkService = NetworkService(
+                                                    FirebaseFirestore.getInstance()
+                                                ),
                                                 navController = navController
                                             )
                                         })

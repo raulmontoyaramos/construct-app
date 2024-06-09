@@ -1,30 +1,26 @@
-package com.example.constructapp.screens
+package com.example.constructapp.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import com.example.constructapp.data.Comment
-import com.example.constructapp.data.Post
-import com.example.constructapp.data.Repository
+import com.example.constructapp.data.NetworkService
+import com.example.constructapp.data.PostsRepository
+import com.example.constructapp.presentation.models.Comment
+import com.example.constructapp.presentation.models.Post
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.QueryDocumentSnapshot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.time.Instant
 
 class PostDetailsViewModel(
-    private val firebaseFirestore: FirebaseFirestore,
+    private val networkService: NetworkService,
     private val navController: NavHostController,
     private val postId: String,
     private val currentUser: FirebaseUser,
-    private val repository: Repository
+    private val postsRepository: PostsRepository
 ) : ViewModel() {
 
     val viewState = MutableStateFlow(
@@ -40,13 +36,36 @@ class PostDetailsViewModel(
 
     init {
         viewModelScope.launch {
-            val post: Post? = withContext(Dispatchers.IO) { repository.getPostById(postId) }
+            val post: Post? = withContext(Dispatchers.IO) { postsRepository.getPostById(postId) }
             if (post == null) {
-                navController.navigateUp()
-                return@launch
+                fetchPost()
             }
             viewState.update { it.copy(post = post) }
             fetchComments()
+        }
+    }
+
+    fun fetchPost() {
+        viewModelScope.launch {
+//            viewState.update {
+//                it.copy(
+//                    commentsState = PostCommentsState.Loading,
+//                    isRefreshing = true
+//                )
+//            }
+            try {
+                val post = withContext(Dispatchers.IO) {
+                    networkService.getPost(postId)
+                }
+                println("PostDetailsViewModel - post success = $post")
+                viewState.update { it.copy(post = post) }
+            } catch (exception: Exception) {
+                println("PostDetailsViewModel - post error = ${exception.message}")
+                navController.navigateUp()
+                return@launch
+            } finally {
+                println("PostDetailsViewModel - post = ${viewState.value.post}")
+            }
         }
     }
 
@@ -60,14 +79,7 @@ class PostDetailsViewModel(
             }
             try {
                 val commentsMap = withContext(Dispatchers.IO) {
-                    firebaseFirestore
-                        .collection("Posts")
-                        .document(postId)
-                        .collection("Messages")
-                        .orderBy("createdAt", Query.Direction.DESCENDING)
-                        .get().await().associate { document: QueryDocumentSnapshot ->
-                            document.id to document.toObject(Comment::class.java)
-                        }
+                    networkService.getComments(postId)
                 }
                 println("PostDetailsViewModel - commentesMap = $commentsMap")
                 viewState.update {
@@ -103,20 +115,21 @@ class PostDetailsViewModel(
         viewModelScope.launch {
             try {
                 viewState.update { it.copy(postNewCommentState = PostNewCommentState.Sending) }
-                val result: DocumentReference = withContext(Dispatchers.IO) {
-                    val commentsCollection = firebaseFirestore.collection("Posts").document(postId)
-                        .collection("Messages")
-                    commentsCollection.add(
+                withContext(Dispatchers.IO) {
+                    networkService.addComment(
+                        postId,
                         Comment(
                             userId = currentUser.uid,
                             userName = currentUser.displayName ?: "Unknown",
                             userPicUrl = currentUser.photoUrl.toString(),
                             body = viewState.value.newComment,
-                            createdAt = Instant.now().epochSecond
+                            createdAt = Instant.now().epochSecond,
+                            postId = postId,
+                            postTitle = viewState.value.post?.title.orEmpty()
                         )
-                    ).await()
+                    )
                 }
-                println("PostDetailsViewModel - result = $result")
+                println("PostDetailsViewModel - onReplyButtonClicked success")
                 viewState.update {
                     it.copy(
                         postNewCommentState = PostNewCommentState.Success,
@@ -138,13 +151,11 @@ class PostDetailsViewModel(
         }
     }
 
-    fun onDeleteCommentClicked(commentId: String) { //Tendría que agregar un campo commentId a la colección Messages
-        viewModelScope.launch {    //o tendríamos que hacer un repositorio como para el id del Post?
+    fun onDeleteCommentClicked(commentId: String) {
+        viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    val comment = firebaseFirestore.collection("Posts").document(postId)
-                        .collection("Messages").document(commentId)
-                    comment.delete().await()
+                    networkService.removeComment(postId, commentId)
                 }
                 fetchComments()
             } catch (exception: Exception) {
@@ -177,9 +188,8 @@ sealed class PostCommentsState {
 }
 
 sealed class PostNewCommentState {
-    data object Writing : PostNewCommentState() //pongo Unit pq es lo que ya hay en pantalla?
-    data object Sending : PostNewCommentState() //pongo el círculo de carga?
-    data object Success : PostNewCommentState() //pongo un toast con mensaje de éxito?
-    data class Error(val errorMessage: String) :
-        PostNewCommentState() //pongo un toast con mensaje de error?
+    data object Writing : PostNewCommentState()
+    data object Sending : PostNewCommentState()
+    data object Success : PostNewCommentState()
+    data class Error(val errorMessage: String) : PostNewCommentState()
 }

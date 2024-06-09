@@ -1,4 +1,4 @@
-package com.example.constructapp.data
+package com.example.constructapp.presentation.models
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
@@ -7,21 +7,23 @@ import java.time.Instant
 
 @Serializable
 @Parcelize
-data class Post(
+data class Comment(
     val userId: String,
     val userName: String,
     val userPicUrl: String,
-    val title: String,
-    val description: String,
+    val body: String,
     val createdAt: Long,
+    val postId: String,
+    val postTitle: String
 ) : Parcelable {
     // Required empty constructor so we can parse the objects from firestore
     constructor() : this(
         userId = "",
         userName = "",
         userPicUrl = "",
-        title = "",
-        description = "",
-        createdAt = Instant.EPOCH.toEpochMilli()
+        body = "",
+        createdAt = Instant.EPOCH.toEpochMilli(),
+        postId = "",
+        postTitle = ""
     )
 }

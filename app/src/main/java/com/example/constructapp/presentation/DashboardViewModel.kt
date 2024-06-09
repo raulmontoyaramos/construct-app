@@ -1,30 +1,27 @@
-package com.example.constructapp.screens
+package com.example.constructapp.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import com.example.constructapp.CreatePost
-import com.example.constructapp.PostDetails
-import com.example.constructapp.SignIn
-import com.example.constructapp.data.Comment
-import com.example.constructapp.data.Post
-import com.example.constructapp.data.Repository
+import com.example.constructapp.data.NetworkService
+import com.example.constructapp.data.PostsRepository
+import com.example.constructapp.navigation.CreatePost
+import com.example.constructapp.navigation.PostDetails
+import com.example.constructapp.navigation.SignIn
+import com.example.constructapp.presentation.models.Comment
+import com.example.constructapp.presentation.models.Post
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.QueryDocumentSnapshot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class DashboardViewModel(
     private val firebaseAuth: FirebaseAuth,
-    private val firebaseFirestore: FirebaseFirestore,
+    private val networkService: NetworkService,
     private val navController: NavHostController,
-    private val repository: Repository
+    private val postsRepository: PostsRepository
 ) : ViewModel() {
 
     val viewState = MutableStateFlow(
@@ -55,12 +52,7 @@ class DashboardViewModel(
             }
             try {
                 val postsMap = withContext(Dispatchers.IO) {
-                    firebaseFirestore.collection("Posts")
-                        .orderBy("createdAt", Query.Direction.DESCENDING)
-                        .get().await()
-                        .associate { document: QueryDocumentSnapshot ->
-                            document.id to document.toObject(Post::class.java)
-                        }.also { repository.setPosts(it) }
+                    networkService.getPosts().also { postsRepository.setPosts(it) }
                 }
                 println("DashboardViewModel - postsMap = $postsMap")
 
@@ -95,15 +87,9 @@ class DashboardViewModel(
                 )
             }
             try {
+                println("DashboardViewModel - fetchComments")
                 val commentsMap = withContext(Dispatchers.IO) {
-                    firebaseFirestore.collection("Messages")
-                        .whereEqualTo("userId", firebaseAuth.currentUser?.uid.orEmpty())
-                        .orderBy("createdAt", Query.Direction.DESCENDING)
-                        .get().await()
-                        .associate { document: QueryDocumentSnapshot ->
-                            document.id to document.toObject(Comment::class.java)
-                        }
-
+                    networkService.getMyLastCommentsInPosts(firebaseAuth.currentUser?.uid.orEmpty())
                 }
                 println("DashboardViewModel - commentsMap = $commentsMap")
 

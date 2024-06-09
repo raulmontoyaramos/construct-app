@@ -4,25 +4,27 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
 import androidx.navigation.NavType
+import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+@Serializable
+object SignIn
 
-inline fun <reified T : Any> serializableType(
-    isNullableAllowed: Boolean = false,
-    json: Json = Json,
-) = object : NavType<T>(isNullableAllowed = isNullableAllowed) {
-    override fun get(bundle: Bundle, key: String) =
-        bundle.getString(key)?.let<String, T>(json::decodeFromString)
+@Serializable
+object Dashboard
 
-    override fun parseValue(value: String): T = json.decodeFromString(value)
+@Serializable
+object CreatePost
 
-    override fun serializeAsValue(value: T): String = json.encodeToString(value)
+@Serializable
+@Parcelize
+data class PostDetails(
+    val postId: String
+) : Parcelable
 
-    override fun put(bundle: Bundle, key: String, value: T) {
-        bundle.putString(key, json.encodeToString(value))
-    }
-}
+
 inline fun <reified T : Parcelable> parcelableType(
     isNullableAllowed: Boolean = false,
     json: Json = Json,

@@ -38,6 +38,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import com.example.constructapp.R
+import com.example.constructapp.presentation.CreatePostState
+import com.example.constructapp.presentation.CreatePostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

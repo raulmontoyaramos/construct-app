@@ -40,6 +40,29 @@ fun SignInScreen(
             }
         }
     )
+
+    LaunchedEffect(key1 = Unit) {
+        AuthUI.getInstance()
+            .signOut(activity)
+            .addOnCompleteListener {
+                signInLauncher.launch(
+                    AuthUI.getInstance()
+                        .createSignInIntentBuilder()
+                        .setAlwaysShowSignInMethodScreen(true)
+                        .setIsSmartLockEnabled(false)
+                        .setAvailableProviders(
+                            listOf(
+                                AuthUI.IdpConfig.GoogleBuilder().build(),
+                                // AuthUI.IdpConfig.EmailBuilder().build(),
+                            )
+                        )
+                        .setLogo(R.drawable.logo)
+                        .setTheme(R.style.Theme_ConstructApp)
+                        .build()
+                )
+            }
+    }
+
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Box(
             modifier = Modifier
@@ -52,23 +75,5 @@ fun SignInScreen(
                 contentDescription = "ConstrucApp"
             )
         }
-    }
-
-    LaunchedEffect(key1 = Unit) {
-        signInLauncher.launch(
-            AuthUI.getInstance()
-                .createSignInIntentBuilder()
-                .setAlwaysShowSignInMethodScreen(true)
-                .setIsSmartLockEnabled(false)
-                .setAvailableProviders(
-                    listOf(
-                        AuthUI.IdpConfig.GoogleBuilder().build(),
-                        // AuthUI.IdpConfig.EmailBuilder().build(),
-                    )
-                )
-                .setLogo(R.drawable.logo)
-                .setTheme(R.style.Theme_ConstructApp)
-                .build()
-        )
     }
 }

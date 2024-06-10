@@ -39,11 +39,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -53,8 +55,11 @@ import com.example.constructapp.presentation.PostCommentsState
 import com.example.constructapp.presentation.PostDetailsViewModel
 import com.example.constructapp.presentation.PostDetailsViewState
 import com.example.constructapp.presentation.models.Comment
+import com.example.constructapp.presentation.models.Post
 import java.time.Instant
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,7 +96,7 @@ fun PostDetailsScreen(viewModel: PostDetailsViewModel) {
                     .padding(16.dp)
             ) {
                 viewState.post?.let {
-                    PostsListItem(
+                    PostsOnDetails(
                         post = it,
                         enabled = false,
                         elevation = 8.dp
@@ -161,6 +166,55 @@ fun PostDetailsScreen(viewModel: PostDetailsViewModel) {
 }
 
 @Composable
+fun PostsOnDetails(
+    post: Post,
+    enabled: Boolean,
+    onCardClick: () -> Unit = {},
+    elevation: Dp = 0.dp
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                shape = RoundedCornerShape(8.dp),
+                elevation = elevation
+            ),
+        enabled = enabled,
+        onClick = onCardClick
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(dimensionResource(R.dimen.email_list_item_inner_padding))
+        ) {
+            PostItemHeader(
+                post = post,
+                modifier = Modifier.fillMaxWidth()
+            )
+            if (post.title.isNotEmpty()) {
+                Text(
+                    text = post.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(
+                        top = dimensionResource(R.dimen.email_list_item_header_subject_spacing),
+                        bottom = dimensionResource(R.dimen.email_list_item_subject_body_spacing)
+                    ),
+                )
+            }
+
+            if (post.description.isNotEmpty()) {
+                Text(
+                    text = post.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun CommentsListItem(
     comment: Comment,
     modifier: Modifier = Modifier.fillMaxWidth()
@@ -193,6 +247,10 @@ fun CommentsListItem(
 
 @Composable
 fun CommentHeader(comment: Comment, modifier: Modifier = Modifier) {
+    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy, HH:mm", Locale.getDefault())
+    val formattedDateTime = Instant.ofEpochSecond(comment.createdAt)
+        .atZone(ZoneId.systemDefault())
+        .format(formatter)
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
@@ -215,7 +273,7 @@ fun CommentHeader(comment: Comment, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.labelMedium
             )
             Text(
-                text = DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochSecond(comment.createdAt)),
+                text = formattedDateTime,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.outline
             )

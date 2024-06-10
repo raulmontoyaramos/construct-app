@@ -373,7 +373,7 @@ fun DashboardPostsContent(
 
 private fun DashboardTab.text() = when (this) {
     DashboardTab.POSTS -> "Posts"
-    DashboardTab.MESSAGES -> "Messages"
+    DashboardTab.MESSAGES -> "Your Comments"
 }
 
 private fun DashboardTab.icon() = when (this) {
@@ -411,11 +411,13 @@ fun PostsListItem(
                 Text(
                     text = post.title,
                     style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(
                         top = dimensionResource(R.dimen.email_list_item_header_subject_spacing),
                         bottom = dimensionResource(R.dimen.email_list_item_subject_body_spacing)
                     ),
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
